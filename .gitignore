@@ -1,0 +1,13 @@
+# Godot
+.godot/
+*.translation
+export/
+builds/
+
+# Blender backups
+*.blend1
+*.blend2
+
+# Secrets / local
+.env
+.DS_Store
