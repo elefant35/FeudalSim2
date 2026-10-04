@@ -111,7 +111,8 @@ func _sheaves_held(player: Player) -> int:
 
 
 func get_prompt(player: Player) -> String:
-	var lines: Array[String] = ["Threshing floor · %d/%d sheaves laid" % [sheaves.size(), CAPACITY]]
+	var lines: Array[String] = ["Threshing floor · %d/%d sheaves laid" % [sheaves.size(), CAPACITY],
+		"Lay sheaves (E)  →  thresh (flail)  →  winnow (basket)"]
 	var held := player.held()
 	if _sheaves_held(player) > 0 and sheaves.size() < CAPACITY:
 		lines.append("[E] Lay out your sheaves")

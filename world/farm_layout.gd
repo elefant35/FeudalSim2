@@ -30,6 +30,7 @@ static func build(world: Node3D) -> void:
 	tf.name = "ThreshingFloor"
 	tf.position = THRESHING_POS
 	world.add_child(tf)
+	_sign(world, "Threshing Floor", THRESHING_POS + Vector3(3.2, 0, 2.6), -0.6)
 	_stall(world)
 	_buyer(world)
 	_lane(world)

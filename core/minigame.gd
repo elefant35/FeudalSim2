@@ -72,7 +72,7 @@ static func draw_meter(c: Control, center: Vector2, value: float, zone_from: flo
 	var x := r.position.x + w * clampf(value, 0.0, 1.0)
 	c.draw_rect(Rect2(x - 2, r.position.y - 5, 4, h + 10), Color(0.98, 0.94, 0.82))
 	if label != "":
-		c.draw_string(ThemeDB.fallback_font, r.position + Vector2(0, -8), label, HORIZONTAL_ALIGNMENT_CENTER, w, 16, Color(1, 0.96, 0.85))
+		c.draw_string(ThemeDB.fallback_font, r.position + Vector2(0, -8), label, HORIZONTAL_ALIGNMENT_CENTER, w, 18, Color(1, 0.96, 0.85))
 
 
 ## A vertical fill bar to the right of the crosshair.
@@ -86,4 +86,4 @@ static func draw_fill(c: Control, center: Vector2, value: float, label: String, 
 		c.draw_rect(Rect2(r.position.x - 4, ty, r.size.x + 8, r.size.y * (target_to - target_from)), Color(1, 1, 1, 0.18))
 	var fh := r.size.y * clampf(value, 0.0, 1.0)
 	c.draw_rect(Rect2(r.position.x, r.end.y - fh, r.size.x, fh), color)
-	c.draw_string(ThemeDB.fallback_font, r.position + Vector2(26, r.size.y / 2), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(1, 0.96, 0.85))
+	c.draw_string(ThemeDB.fallback_font, r.position + Vector2(26, r.size.y / 2), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(1, 0.96, 0.85))

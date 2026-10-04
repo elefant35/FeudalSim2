@@ -113,6 +113,21 @@ field of plots, a threshing floor, a tool stall (buy seeds, tools, bread) and a 
   - you start with a bucket and a few turnips
 - **Testing:** `tools/sandbox.sh` lets you test the later stages quickly.
 
+## Playtest 2 feedback (fixed)
+
+- **UI:**
+  - the UI scales with the window, with larger text
+  - prompts, hints and messages sit on readable backgrounds
+  - the corners and hotbar no longer overlap
+  - all seed shares one hotbar slot (press again to switch)
+- **Clarity:**
+  - a "Next:" line always names the next step (e.g. bind the cut stalks, then take sheaves to the
+    threshing floor, then winnow)
+  - field guide (G) with each crop's season, time and full field-to-market steps
+  - a sign at the threshing floor listing its three steps
+  - prompts on cut stalks say to switch to hands and bind them
+- **Blight:** the misleading "burn it" text is gone; pulling a blighted plant is all it takes.
+
 ## Not verified yet (needs Tyler's hands)
 
 Every mini-game is exercised by tests and screenshots, but none of them has had a real mouse click.

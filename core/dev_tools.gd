@@ -12,6 +12,7 @@ extends Node
 ## --hold=slot     select a hotbar slot
 ## --click         left-click whatever is under the crosshair (starts its minigame)
 ## --interact      press E on whatever is under the crosshair
+## --open=panel    open a panel: guide, pack, pause
 ## --eat           eat something just before the screenshot
 ## --newgame       after a second, run New Game once (checks a clean scene reload)
 
@@ -67,6 +68,13 @@ func apply(world: Node3D, player: Player) -> void:
 		get_tree().create_timer(float(args.get("wait", "2.5")) - 0.4).timeout.connect(func() -> void:
 			player.needs.hunger = 50.0
 			player.eat_something())
+	if args.has("open"):
+		await get_tree().create_timer(0.5).timeout
+		var hud: Hud = world.hud
+		match String(args.open):
+			"guide": hud.open_guide()
+			"pack": hud.open_inventory()
+			"pause": hud.open_pause_menu()
 	if args.has("click"):
 		await get_tree().create_timer(0.6).timeout
 		player._update_target()

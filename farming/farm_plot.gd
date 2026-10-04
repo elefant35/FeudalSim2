@@ -285,6 +285,8 @@ func _action_text(player: Player) -> String:
 	var held := player.held()
 	var it := Items.item(held)
 	var p := player.target_point
+	if held != Player.HANDS and state.plants[cell_under(p)] == PlotState.Plant.CUT:
+		return "Switch to your hands (1), then click each cut bundle to bind it into a sheaf."
 	if held == Player.HANDS:
 		if weed_under(p) >= 0:
 			return "[Hold left] Pull the weed"
@@ -295,12 +297,12 @@ func _action_text(player: Player) -> String:
 			PlotState.Plant.BLIGHTED:
 				return "[Hold left] Pull the blighted plant"
 			PlotState.Plant.CUT:
-				return "[Click] Bind into a sheaf"
+				return "[Click] Bind the cut stalks into a sheaf"
 			PlotState.Plant.ALIVE:
 				if state.is_ripe():
 					if state.crop.harvest == CropData.Harvest.HANDS:
 						return "[Hold left] Pull the %s" % state.crop.display_name.to_lower()
-					return "Reap it with a sickle."
+					return "Ripe! Reap it with a sickle, then bind the cut stalks by hand."
 		return ""
 	if held == &"hoe":
 		if state.has_crop():
@@ -349,6 +351,8 @@ func use(player: Player) -> Minigame:
 					player.needs.exert(0.3)
 					Sfx.play_at("rustle", cell_world(c))
 					refresh()
+					if not field.any_cut():
+						player.say("All bound. Take your sheaves to the threshing floor, north-west of the house.")
 				return null
 			PlotState.Plant.ALIVE:
 				if state.is_ripe() and state.crop.harvest == CropData.Harvest.HANDS:

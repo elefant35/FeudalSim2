@@ -32,12 +32,18 @@ func _ready() -> void:
 	Clock.minutes_passed.connect(_on_minutes_passed)
 	Clock.day_started.connect(_on_day_started)
 	FarmLayout.build(self)
+	hud.objective = _objective
+	hud.guide_sections = FarmGuide.sections
 	if DevTools.no_save() or not load_game():
 		_start_fresh()
 	print("FeudalSim2 world ready")
 	var dev := DevTools.new()
 	add_child(dev)
 	dev.apply(self, player)
+
+
+func _objective() -> String:
+	return FarmGuide.next_step(player, $Field, $ThreshingFloor)
 
 
 func _start_fresh() -> void:
@@ -52,8 +58,7 @@ func _start_fresh() -> void:
 	player.inventory.add(&"bread", 5)
 	player.inventory.add(&"turnip", 4, 1)
 	player.select_slot(1)
-	hud.toast("Spring has come to your farm. Till a plot with your hoe, then sow your turnip seed.")
-	hud.toast("Seed needs water: fill your bucket at the well. Press F to eat when you're hungry.")
+	hud.toast("Spring has come to your farm. Follow the \"Next\" hint (top left), or press G for the field guide.")
 
 
 # --- Environment ----------------------------------------------------------------------------

@@ -30,6 +30,7 @@ var viewmodel: Viewmodel
 
 var hotbar: Array[StringName] = [HANDS]
 var held_index: int = 0
+var seed_choice: StringName = &""   ## Which seed the shared seed slot holds.
 var minigame: Minigame = null
 var ui_open: bool = false
 var frozen: bool = false   ## Sleeping, fading, etc.
@@ -76,8 +77,32 @@ func held() -> StringName:
 	return hotbar[held_index]
 
 
+## Seed types carried, in a stable order.
+func seed_kinds() -> Array[StringName]:
+	var out: Array[StringName] = []
+	for id: StringName in [&"turnip_seed", &"cabbage_seed", &"barley_seed", &"wheat_seed"]:
+		if inventory.has(id):
+			out.append(id)
+	for s in inventory.stacks():
+		var it := Items.item(s.id)
+		if it and it.kind == ItemData.Kind.SEED and not (s.id in out):
+			out.append(s.id)
+	return out
+
+
 func select_slot(i: int) -> void:
 	if i < 0 or i >= hotbar.size() or minigame != null:
+		return
+	var it := Items.item(hotbar[i])
+	if i == held_index and it and it.kind == ItemData.Kind.SEED:
+		# Pressing the seed slot again picks the next kind of seed.
+		var kinds := seed_kinds()
+		if kinds.size() > 1:
+			seed_choice = kinds[(kinds.find(seed_choice) + 1) % kinds.size()]
+			hotbar[i] = seed_choice
+			viewmodel.set_held(held())
+			say("%s selected." % Items.name_of(seed_choice))
+			hotbar_changed.emit()
 		return
 	held_index = i
 	viewmodel.set_held(held())
@@ -88,20 +113,23 @@ func _rebuild_hotbar() -> void:
 	var current := held()
 	hotbar = [HANDS]
 	var tools: Array[StringName] = []
-	var seeds: Array[StringName] = []
 	for s in inventory.stacks():
 		var it := Items.item(s.id)
-		if it == null or not it.hotbar or s.id in tools or s.id in seeds:
+		if it == null or not it.hotbar or it.kind == ItemData.Kind.SEED or s.id in tools:
 			continue
-		if it.kind == ItemData.Kind.SEED:
-			seeds.append(s.id)
-		else:
-			tools.append(s.id)
+		tools.append(s.id)
 	var order := [&"hoe", &"bucket", &"sickle", &"flail", &"winnowing_basket", &"scarecrow"]
 	tools.sort_custom(func(a: StringName, b: StringName) -> bool: return order.find(a) < order.find(b))
 	hotbar.append_array(tools)
-	hotbar.append_array(seeds)
-	held_index = maxi(0, hotbar.find(current))
+	var kinds := seed_kinds()
+	if not kinds.is_empty():
+		if not (seed_choice in kinds):
+			seed_choice = kinds[0]
+		hotbar.append(seed_choice)
+	var was_seed := Items.item(current) != null and Items.item(current).kind == ItemData.Kind.SEED
+	held_index = hotbar.find(current)
+	if held_index < 0:
+		held_index = hotbar.size() - 1 if was_seed and not kinds.is_empty() else 0
 	viewmodel.set_held(held())
 	hotbar_changed.emit()
 

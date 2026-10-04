@@ -9,6 +9,7 @@ var _holding := false
 var _speed := 0.0
 var _swing_cd := 0.0
 var _cut_this_swing: Array = []
+var _cut_total := 0
 
 
 func _init() -> void:
@@ -58,6 +59,7 @@ func update(delta: float) -> void:
 		return
 	if plot.state.harvest_cell(c) >= 0:
 		_cut_this_swing.append(key)
+		_cut_total += 1
 		Sfx.play_at("cut", plot.cell_world(c), -2.0)
 		Fx.burst(player, plot.cell_world(c) + Vector3(0, 0.5, 0), Color(0.85, 0.72, 0.4), 12, 1.5, Vector3.UP, 70.0, 0.025)
 		plot.refresh()
@@ -65,6 +67,8 @@ func update(delta: float) -> void:
 
 func _on_stop() -> void:
 	player.viewmodel.pose_rest()
+	if _cut_total > 0:
+		player.say("Reaped. Now switch to your hands (1) and click each cut bundle to bind it into a sheaf.")
 
 
 func draw(c: Control, center: Vector2) -> void:

@@ -35,6 +35,14 @@ func _ready() -> void:
 	Clock.minutes_passed.connect(_on_minutes)
 
 
+## Are there reaped stalks lying anywhere, waiting to be bound?
+func any_cut() -> bool:
+	for p in plots:
+		if p.state.count_plants(PlotState.Plant.CUT) > 0:
+			return true
+	return false
+
+
 func half_extents() -> Vector2:
 	return Vector2(COLS * PITCH / 2.0, ROWS * PITCH / 2.0)
 

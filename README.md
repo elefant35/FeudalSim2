@@ -21,6 +21,9 @@ Tests (headless): `/Applications/Godot_mono.app/Contents/MacOS/Godot --headless 
 
 ## How to play
 
+Not sure what to do? The **Next:** line under the clock always names the next step, and **G** opens the
+field guide.
+
 It's the first morning of spring. You have a cottage, a fenced field of twelve plots, a hoe, a bucket, a little
 turnip seed, a small store of food (five loaves, four turnips) and 12 gold. Everything else you earn.
 
@@ -36,7 +39,7 @@ turnip seed, a small store of food (five loaves, four turnips) and 12 gold. Ever
    everything for you.
 4. Each day, check your plots. Look at a plot to see its state. With empty **hands**: hold to pull weeds
    (ease off before the strain hits red, or the root snaps and regrows), click caterpillars off cabbages,
-   and pull blighted plants before the blight spreads. Crows eat fresh seed; walk up to scare them, or buy a
+   and pull blighted (brown, spotted) plants before the blight spreads. Pulling them is all it takes. Crows eat fresh seed; walk up to scare them, or buy a
    **scarecrow** and set it up beside the plots.
 5. When a crop is ripe, pull root crops by hand. Grain is reaped with the **sickle**: hold and sweep the
    mouse across it in steady strokes. Then click the cut stalks to bind them into sheaves.
@@ -68,7 +71,8 @@ or the mini-games. At 1× a day lasts about 15 minutes.
 | E | Interact (bed, stall, cart, threshing floor) |
 | F | Eat |
 | Tab | Pack (inventory) |
-| 1–9, mouse wheel | Choose tool |
+| G | Field guide: what to sow this season, and every crop's steps from field to market |
+| 1–9, mouse wheel | Choose tool. All your seed shares one slot; press its number again to switch seed |
 | T | Time speed |
 | Esc | Menu (save, new game, quit) |
 

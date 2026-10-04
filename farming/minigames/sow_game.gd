@@ -62,7 +62,7 @@ func draw(c: Control, center: Vector2) -> void:
 	var origin := center + Vector2(70, -60)
 	var cell := 36.0
 	c.draw_rect(Rect2(origin - Vector2(6, 26), Vector2(cell * 3 + 12, cell * 3 + 32)), Color(0.12, 0.09, 0.06, 0.85))
-	c.draw_string(ThemeDB.fallback_font, origin + Vector2(0, -8), "Seed cover", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 0.96, 0.85))
+	c.draw_string(ThemeDB.fallback_font, origin + Vector2(0, -8), "Seed cover", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(1, 0.96, 0.85))
 	for i in PlotState.CELLS:
 		var r := Rect2(origin + Vector2(i % 3, i / 3) * cell, Vector2(cell - 3, cell - 3))
 		var col := Color(0.3, 0.22, 0.15)
@@ -77,4 +77,4 @@ func draw(c: Control, center: Vector2) -> void:
 					col = Color(0.85, 0.45, 0.2)
 		c.draw_rect(r, col)
 	var left := player.inventory.count(seed_item)
-	c.draw_string(ThemeDB.fallback_font, origin + Vector2(0, cell * 3 + 18), "%d handfuls left" % left, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 0.96, 0.85))
+	c.draw_string(ThemeDB.fallback_font, origin + Vector2(0, cell * 3 + 18), "%d handfuls left" % left, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(1, 0.96, 0.85))

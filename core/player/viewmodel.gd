@@ -72,9 +72,9 @@ func _build_specs() -> void:
 		}},
 		&"winnowing_basket": {"model": &"winnowing_basket", "grip_r": Vector3(0.32, 0.06, 0), "grip_l": Vector3(-0.32, 0.06, 0),
 			"roll_r": -1.2, "roll_l": 1.2, "poses": {
-			"rest": _pose(Vector3(0, -0.4, -0.62), Vector3(0, 1, 0.35), Vector3(0, 0, -1)),
-			"lifted": _pose(Vector3(0, -0.24, -0.66), Vector3(0, 1, 0.2), Vector3(0, 0, -1)),
-			"toss": _pose(Vector3(0, -0.06, -0.72), Vector3(0, 1, -0.35), Vector3(0, 0, -1)),
+			"rest": _pose(Vector3(0, -0.45, -0.95), Vector3(0, 1, 0.5), Vector3(0, 0, -1)),
+			"lifted": _pose(Vector3(0, -0.34, -1.0), Vector3(0, 1, 0.3), Vector3(0, 0, -1)),
+			"toss": _pose(Vector3(0, -0.12, -1.05), Vector3(0, 1, -0.3), Vector3(0, 0, -1)),
 		}},
 		&"seed_pouch": {"model": &"seed_pouch", "grip_l": Vector3(0, 0.02, 0), "roll_l": 0.4, "poses": {
 			"rest": _pose(Vector3(-0.2, -0.32, -0.46), Vector3(0, 1, 0.2), Vector3(0, 0, -1)),

@@ -239,3 +239,51 @@ func test_first_week_is_survivable() -> void:
 	check(not collapsed[0], "collapsed during the first week")
 	check(lowest > 0.0, "starved in the first week (lowest hunger %.0f)" % lowest)
 	n.free()
+
+
+func test_seed_kinds_share_one_hotbar_slot() -> void:
+	var w := _world()
+	var player: Player = w.player
+	player.inventory.add(&"barley_seed", 6)
+	player.inventory.add(&"wheat_seed", 6)
+	var seed_slots := 0
+	for id in player.hotbar:
+		if Items.item(id) and Items.item(id).kind == ItemData.Kind.SEED:
+			seed_slots += 1
+	eq(seed_slots, 1, "one seed slot")
+	var slot := player.hotbar.size() - 1
+	player.select_slot(slot)
+	var first := player.held()
+	player.select_slot(slot)
+	check(player.held() != first, "pressing the seed slot again changes seed")
+	check(Items.item(player.held()).kind == ItemData.Kind.SEED, "still holding seed")
+	_finish(w)
+
+
+func test_next_step_walks_through_the_grain_chain() -> void:
+	var w := _world()
+	var player: Player = w.player
+	var field: Field = w.get_node("Field")
+	var tf: ThreshingFloor = w.get_node("ThreshingFloor")
+	var s := field.plots[0].state
+	while not s.is_tilled():
+		s.till(1.0)
+	for pt in [Vector2(0.33, 0.33), Vector2(0.67, 0.33), Vector2(0.33, 0.67), Vector2(0.67, 0.67)]:
+		s.sow(Items.crop(&"barley"), pt)
+	s.daily_update(0, false, field.rng)
+	s.growth = 99.0
+	check(FarmGuide.next_step(player, field, tf).contains("sickle"), "ripe grain → get/use a sickle")
+	s.harvest_cell(4)
+	check(FarmGuide.next_step(player, field, tf).contains("Bind"), "cut stalks → bind")
+	for c in PlotState.CELLS:
+		s.harvest_cell(c)
+		s.bind_cell(c)
+	player.inventory.add(&"barley_sheaf", 2, 1)
+	check(FarmGuide.next_step(player, field, tf).contains("threshing floor"), "sheaves → threshing floor")
+	player.inventory.remove(&"barley_sheaf", player.inventory.count(&"barley_sheaf", 1), 1)
+	for q in [0, 1, 2, 3]:
+		player.inventory.remove(&"barley_sheaf", player.inventory.count(&"barley_sheaf", q), q)
+	player.inventory.add(&"barley_chaff", 1, 1)
+	check(FarmGuide.next_step(player, field, tf).contains("winnowing basket"), "chaff → winnow")
+	check(FarmGuide.sections().size() >= 5, "guide has sections")
+	_finish(w)

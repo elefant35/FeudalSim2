@@ -89,7 +89,7 @@ func _succeed() -> void:
 			plot.state.remove_weed(index, false)
 		Kind.BLIGHT:
 			plot.state.pull_plant(index)
-			player.say("Pulled. Burn it, and keep an eye on its neighbours.")
+			player.say("Diseased plant pulled. That stops it spreading; keep an eye on its neighbours.")
 		Kind.HARVEST:
 			plot.harvest_by_hand(player, index)
 	plot.refresh()
