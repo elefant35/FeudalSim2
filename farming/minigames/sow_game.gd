@@ -23,8 +23,7 @@ func update(delta: float) -> void:
 
 func _plot_under_crosshair() -> FarmPlot:
 	player.ray.force_raycast_update()
-	var n: Node = player.ray.get_collider()
-	return n as FarmPlot
+	return FarmPlot.from_collider(player.ray.get_collider())
 
 
 func press() -> void:

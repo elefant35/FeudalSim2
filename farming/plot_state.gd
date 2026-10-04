@@ -225,7 +225,7 @@ func daily_update(season: int, raining: bool, rng: RandomNumberGenerator) -> voi
 		if not germinated:
 			_germinate()
 		else:
-			_grow(season, rng)
+			_grow(season, raining, rng)
 	if is_tilled() or has_crop():
 		for n in weeds_regrowing:
 			_add_weed(rng)
@@ -258,7 +258,7 @@ func _germinate() -> void:
 		health -= 0.1
 
 
-func _grow(season: int, rng: RandomNumberGenerator) -> void:
+func _grow(season: int, raining: bool, rng: RandomNumberGenerator) -> void:
 	if season == Clock.Season.WINTER and not crop.hardy:
 		var killed := false
 		for i in CELLS:
@@ -290,7 +290,7 @@ func _grow(season: int, rng: RandomNumberGenerator) -> void:
 				last_event = "Caterpillars ate a %s to nothing." % crop.display_name.to_lower()
 		health -= 0.025 * total
 
-	_spread_blight(rng)
+	_spread_blight(raining, rng)
 
 	if growth >= crop.grow_days:
 		ripe_days += 1
@@ -303,7 +303,7 @@ func _grow(season: int, rng: RandomNumberGenerator) -> void:
 	_check_finished()
 
 
-func _spread_blight(rng: RandomNumberGenerator) -> void:
+func _spread_blight(raining: bool, rng: RandomNumberGenerator) -> void:
 	var newly: Array[int] = []
 	for i in CELLS:
 		if plants[i] == Plant.BLIGHTED:
@@ -313,7 +313,7 @@ func _spread_blight(rng: RandomNumberGenerator) -> void:
 				for n in _neighbors(i):
 					if plants[n] == Plant.ALIVE and rng.randf() < BLIGHT_SPREAD:
 						newly.append(n)
-		elif plants[i] == Plant.ALIVE and rng.randf() < crop.blight_chance * (2.0 if moisture > 0.9 else 1.0):
+		elif plants[i] == Plant.ALIVE and rng.randf() < crop.blight_chance * (2.0 if raining or moisture > SOGGY else 1.0):
 			newly.append(i)
 	for i in newly:
 		plants[i] = Plant.BLIGHTED

@@ -3,7 +3,7 @@ extends Node3D
 ## sun and sky, sleeping, collapsing, saving.
 
 const SAVE_PATH := "user://save.json"
-const START_GOLD := 6
+const START_GOLD := 12
 const SPAWN := Vector3(-9.0, 0.0, -2.5)
 const SPAWN_YAW := -2.2
 
@@ -29,7 +29,7 @@ func _ready() -> void:
 	hud.save_requested.connect(save_game)
 	hud.new_game_requested.connect(new_game)
 	player.needs.collapsed.connect(_on_collapsed)
-	Clock.minutes_passed.connect(func(m: float) -> void: player.needs.pass_hours(m / 60.0))
+	Clock.minutes_passed.connect(_on_minutes_passed)
 	Clock.day_started.connect(_on_day_started)
 	FarmLayout.build(self)
 	if DevTools.no_save() or not load_game():
@@ -47,10 +47,11 @@ func _start_fresh() -> void:
 	player.wallet.gold = START_GOLD
 	player.wallet.changed.emit(player.wallet.gold)
 	player.inventory.add(&"hoe")
-	player.inventory.add(&"turnip_seed", 10)
-	player.inventory.add(&"bread", 2)
+	player.inventory.add(&"turnip_seed", 12)
+	player.inventory.add(&"bread", 5)
 	player.select_slot(1)
 	hud.toast("Spring has come to your farm. Till a plot with your hoe, then sow your turnip seed.")
+	hud.toast("Seed needs water: buy a bucket at the Tools & Seed stall down the lane, and draw water at the well.")
 
 
 # --- Environment ----------------------------------------------------------------------------
@@ -124,6 +125,10 @@ func _update_sky() -> void:
 
 
 # --- Days, sleep, collapse ------------------------------------------------------------------
+
+func _on_minutes_passed(minutes: float) -> void:
+	player.needs.pass_hours(minutes / 60.0)
+
 
 func _on_day_started(_day: int) -> void:
 	if Clock.day_of_season() == 1:
@@ -202,7 +207,8 @@ func load_game() -> bool:
 
 
 func new_game() -> void:
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
+	if not DevTools.no_save():
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
 	get_tree().paused = false
 	get_tree().reload_current_scene()
 

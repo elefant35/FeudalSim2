@@ -49,7 +49,7 @@ func update(delta: float) -> void:
 	if not good:
 		return
 	player.ray.force_raycast_update()
-	var plot := player.ray.get_collider() as FarmPlot
+	var plot := FarmPlot.from_collider(player.ray.get_collider())
 	if plot == null or not plot.state.is_ripe():
 		return
 	var c := plot.cell_under(player.ray.get_collision_point())

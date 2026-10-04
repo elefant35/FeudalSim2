@@ -1,6 +1,6 @@
 # Chunk 1: Farming
 
-**Status:** in progress
+**Status:** playable, awaiting Tyler's first playtest
 
 A first-person medieval farm through the year. You till, sow, water, weed, protect and harvest your
 fields, thresh and winnow your grain, and sell the crop for gold. You also eat, sleep, and plan your
@@ -51,8 +51,60 @@ field of plots, a threshing floor, a tool stall (buy seeds, tools, bread) and a 
 
 ## Shipped
 
-*(filled in as pieces land)*
+- **World:**
+  - the valley farm with a cottage you can walk into (bed, hearth, table, shelves)
+  - a fenced field of 12 plots, a well with a working crank, and a threshing floor with a wind pennant
+  - a Tools & Seed stall and a Produce Bought cart on the lane
+  - trees, rocks and flowers around the farm
+  - a day/night sky and rain
+- **Needs, gold and saving:**
+  - hunger and energy; eating (F / pack); sleeping after 18:00
+  - collapse when exhausted
+  - gold wallet; buying and selling with quality-based prices
+  - autosave on sleep, save/new game/quit from the Esc menu
+- **Time:** 1×/2×/4× world speed (T, the HUD button, or the Esc menu); four 6-day seasons.
+- **Crops:** turnip, cabbage, barley and wheat, each with sowing seasons, growth rates, frost hardiness,
+  four visible growth stages, and blighted and dead looks.
+- **Mini-games:**
+  - tilling (timed strikes)
+  - broadcast sowing (aimed handfuls with a cover map)
+  - winding the well (circle the mouse)
+  - pouring (fill to the band)
+  - pulling weeds, blighted plants and root crops (strain meter)
+  - picking caterpillars
+  - reaping (steady mouse sweeps)
+  - binding sheaves
+  - threshing (rhythm)
+  - winnowing (toss on the gust)
+- **Pests:** crows that fly in for fresh seed (walk up to scare them, or place a scarecrow); weeds;
+  caterpillars on cabbages; blight that spreads if left.
+- **Art and sound:**
+  - our own Blender-scripted models (arms, tools, cottage, well, crops, crow…) plus Kenney CC0 props
+  - Poly Haven textures
+  - CC0 and synthesized sounds
+  - see `assets/CREDITS.md`
+- **Tests:** 23 headless tests. They cover plot logic and the full turnip loop end-to-end
+  (till → sow → grow → harvest → sell), the well, threshing and winnowing, sleep, needs, first-week
+  survival, and save/load.
+- **Dev tools:** `tools/shot.sh` takes in-game screenshots with dev flags (time, position, scenario, click).
+
+## Not verified yet (needs Tyler's hands)
+
+Every mini-game is exercised by tests and screenshots, but none of them has had a real mouse click.
+The input routing, the trade/pack/menu panels, and the sleep fade still need a real playtest.
 
 ## Left for later
 
-*(filled in as pieces land)*
+- **Polish:**
+  - tool resting angles in first person
+  - Kenney props whose colours clash with our palette (barrels, lantern)
+  - seasonal tree colours and winter frost on the ground
+- **More depth:**
+  - soil fertility and crop rotation
+  - manure
+  - ploughing with an animal
+  - more crops (peas, beans, onions, flax)
+- **Bigger systems, explicitly out of scope until their chunk:**
+  - milling and flour (baking chunk)
+  - real traders and price haggling (market chunk)
+  - tool making (craftsmen chunk)

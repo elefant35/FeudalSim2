@@ -6,14 +6,14 @@ extends Node
 signal changed
 signal collapsed(reason: String)
 
-const HUNGER_PER_HOUR := 100.0 / 30.0     ## Full to starving in ~30 waking hours.
+const HUNGER_PER_HOUR := 100.0 / 40.0     ## Full to starving in ~40 waking hours.
 const ENERGY_PER_HOUR := 100.0 / 19.0     ## Rested to collapse in ~19 waking hours.
-const STARVING_ENERGY_MULT := 2.5
+const STARVING_ENERGY_MULT := 2.0
 const SLEEP_HOURS_FOR_FULL := 7.0
 const TIRED := 25.0
 const HUNGRY := 25.0
 
-var hunger: float = 85.0
+var hunger: float = 90.0
 var energy: float = 100.0
 
 
@@ -41,7 +41,7 @@ func eat(food_value: float) -> void:
 
 func sleep(hours: float) -> void:
 	energy = minf(100.0, energy + hours * 100.0 / SLEEP_HOURS_FOR_FULL)
-	hunger = maxf(0.0, hunger - HUNGER_PER_HOUR * hours * 0.4)
+	hunger = maxf(0.0, hunger - HUNGER_PER_HOUR * hours * 0.25)
 	changed.emit()
 
 

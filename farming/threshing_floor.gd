@@ -40,9 +40,12 @@ func _ready() -> void:
 	add_child(_pile)
 	_noise.frequency = 0.35
 	_noise.seed = 5
-	Clock.day_started.connect(func(_d: int) -> void:
-		_pile_amount = 0.0
-		_refresh())
+	Clock.day_started.connect(_on_day_started)
+
+
+func _on_day_started(_day: int) -> void:
+	_pile_amount = 0.0
+	_refresh()
 
 
 func _process(delta: float) -> void:

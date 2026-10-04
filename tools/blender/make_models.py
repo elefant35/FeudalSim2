@@ -172,7 +172,8 @@ def fp_arm():
         segment("cuff", (0, 0.25, 0), (0, 0.29, 0), 0.047, "linen_dark", 8),
         box("palm", (0.075, 0.09, 0.035), (0, 0.33, 0), "skin"),
         box("fingers", (0.072, 0.04, 0.045), (0, 0.38, -0.012), "skin", rot=(25, 0, 0)),
-        box("thumb", (0.022, 0.05, 0.022), (0.045, 0.34, 0.01), "skin", rot=(0, 0, -30)),
+        # Palm faces down, so the thumb sits on the inner side (towards the body's centre).
+        box("thumb", (0.022, 0.05, 0.022), (-0.045, 0.34, 0.01), "skin", rot=(0, 0, 30)),
     ]
     join(parts, "arm")
     export("fp_arm")
@@ -185,7 +186,7 @@ def fp_arm_l():
         segment("cuff", (0, 0.25, 0), (0, 0.29, 0), 0.047, "linen_dark", 8),
         box("palm", (0.075, 0.09, 0.035), (0, 0.33, 0), "skin"),
         box("fingers", (0.072, 0.04, 0.045), (0, 0.38, -0.012), "skin", rot=(25, 0, 0)),
-        box("thumb", (0.022, 0.05, 0.022), (-0.045, 0.34, 0.01), "skin", rot=(0, 0, 30)),
+        box("thumb", (0.022, 0.05, 0.022), (0.045, 0.34, 0.01), "skin", rot=(0, 0, -30)),
     ]
     join(parts, "arm")
     export("fp_arm_l")

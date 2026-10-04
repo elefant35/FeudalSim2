@@ -76,9 +76,11 @@ func test_turnip_loop_till_sow_grow_harvest_sell() -> void:
 				tg.press()
 			guard += 1
 		pulled += 1
+	for c in PlotState.CELLS:
+		plot.state.pull_plant(c)   # any blighted plants (rain makes blight likelier)
 	var turnips := player.inventory.count(&"turnip")
 	eq(turnips, pulled, "one turnip per plant")
-	check(turnips >= 6, "good sowing gives most of a plot (%d)" % turnips)
+	check(turnips >= 5, "good sowing gives most of a plot (%d)" % turnips)
 	eq(plot.state.has_crop(), false, "plot back to stubble")
 
 	# Sell them all.
@@ -205,3 +207,33 @@ func test_save_and_load_roundtrip() -> void:
 	eq(f2.plots[3].state.till_progress, 1.0, "plot restored")
 	eq(f2.scarecrows.size(), 1, "scarecrow restored")
 	_finish(w2)
+
+
+## A sensible new player (buys a bucket, eats when hungry, sleeps at dusk, works ~2h a day)
+## must reach the first turnip harvest without collapsing or starving.
+func test_first_week_is_survivable() -> void:
+	var n := Needs.new()
+	var gold := 12 - Items.item(&"bucket").buy_price
+	var bread := 5
+	var bread_price := Items.item(&"bread").buy_price
+	var collapsed := [false]
+	n.collapsed.connect(func(_r: String) -> void: collapsed[0] = true)
+	var turnip_harvest_day := 7     # sown day 1, sprouts overnight, ~5 days' growth
+	var lowest := 100.0
+	for day in turnip_harvest_day:
+		for hour in 12:             # 06:00 to 18:00 awake
+			n.pass_hours(1.0)
+			if hour < 3:
+				n.exert(1.5)        # tilling, drawing water, pouring
+			if n.hunger < 35.0:
+				if bread == 0 and gold >= bread_price:
+					gold -= bread_price
+					bread += 1
+				if bread > 0:
+					bread -= 1
+					n.eat(Items.item(&"bread").food_value)
+			lowest = minf(lowest, n.hunger)
+		n.sleep(12.0)
+	check(not collapsed[0], "collapsed during the first week")
+	check(lowest > 0.0, "starved in the first week (lowest hunger %.0f)" % lowest)
+	n.free()

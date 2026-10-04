@@ -10,8 +10,11 @@ extends Node
 ## --scenario=name run a setup function on the world (world.dev_scenario)
 ## --shot=path     save a screenshot after --wait seconds (default 2.5), then quit
 ## --hold=slot     select a hotbar slot
+## --click         left-click whatever is under the crosshair (starts its minigame)
+## --newgame       after a second, run New Game once (checks a clean scene reload)
 
 var args: Dictionary = {}
+static var _reloaded := false
 
 
 static func parse() -> Dictionary:
@@ -48,6 +51,18 @@ func apply(world: Node3D, player: Player) -> void:
 		player.head.rotation.x = deg_to_rad(v[1] if v.size() > 1 else 0.0)
 	if args.has("hold"):
 		player.select_slot(int(args.hold))
+	if args.has("newgame") and not _reloaded:
+		_reloaded = true
+		await get_tree().create_timer(1.0).timeout
+		world.new_game()
+		return
+	if args.has("click"):
+		await get_tree().create_timer(0.6).timeout
+		player._update_target()
+		if player.target and player.target.has_method("use"):
+			var g: Minigame = player.target.use(player)
+			if g:
+				player.start_minigame(g)
 	if args.has("shot"):
 		await get_tree().create_timer(float(args.get("wait", "2.5"))).timeout
 		await RenderingServer.frame_post_draw

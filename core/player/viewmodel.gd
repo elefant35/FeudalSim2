@@ -3,8 +3,8 @@ extends Node3D
 ## First-person hands and the held item. Actions are short tweened animations layered over a
 ## per-tool resting pose and a walking bob. Poses are offsets (position, euler rotation) per arm.
 
-const RIGHT_BASE_POS := Vector3(0.24, -0.30, -0.42)
-const LEFT_BASE_POS := Vector3(-0.26, -0.34, -0.44)
+const RIGHT_BASE_POS := Vector3(0.25, -0.33, -0.42)
+const LEFT_BASE_POS := Vector3(-0.27, -0.36, -0.44)
 const BASE_ROT := Vector3(0.12, 0.0, 0.0)
 
 ## How each tool sits in the hand (rotation of the model at the grip).
@@ -52,6 +52,9 @@ var _bucket_fill: float = 0.0
 
 
 func _ready() -> void:
+	# Drawn at a third of real size, a third as far away: looks the same, but tools don't
+	# poke into the ground or walls.
+	scale = Vector3.ONE * 0.33
 	add_child(right_arm)
 	right_arm.add_child(Models.make(&"fp_arm"))
 	add_child(left_arm)

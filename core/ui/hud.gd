@@ -33,7 +33,7 @@ func setup(p: Player) -> void:
 	player.hotbar_changed.connect(_refresh_hotbar)
 	player.inventory.changed.connect(_refresh_hotbar)
 	player.wallet.changed.connect(func(_g: int) -> void: _refresh_gold())
-	Clock.speed_changed.connect(func(_s: int) -> void: _refresh_speed())
+	Clock.speed_changed.connect(_on_speed_changed)
 	_refresh_hotbar()
 	_refresh_gold()
 	_refresh_speed()
@@ -85,13 +85,15 @@ func _ready() -> void:
 	for l: Label in [_prompt, _hint]:
 		l.set_anchors_preset(Control.PRESET_CENTER)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		l.grow_horizontal = Control.GROW_DIRECTION_BOTH
-		l.custom_minimum_size = Vector2(700, 0)
-		l.position = Vector2(-350, 24)
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.offset_left = -360
+		l.offset_right = 360
+		l.offset_top = 26
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		l.add_theme_constant_override("outline_size", 6)
 		l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 		root.add_child(l)
-	_hint.position = Vector2(-350, 110)
+	_hint.offset_top = 112
 	_hint.add_theme_color_override("font_color", Color(0.9, 0.86, 0.7))
 	_hint.add_theme_font_size_override("font_size", 15)
 
@@ -188,6 +190,10 @@ func _draw_overlay() -> void:
 	elif _panel == null:
 		_overlay.draw_circle(center, 3.0, Color(1, 1, 1, 0.85))
 		_overlay.draw_arc(center, 5.0, 0, TAU, 16, Color(0, 0, 0, 0.5), 1.0)
+
+
+func _on_speed_changed(_speed: int) -> void:
+	_refresh_speed()
 
 
 func _refresh_speed() -> void:

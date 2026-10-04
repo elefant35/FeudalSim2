@@ -36,7 +36,7 @@ func release() -> void:
 
 func update(delta: float) -> void:
 	player.ray.force_raycast_update()
-	_plot = player.ray.get_collider() as FarmPlot
+	_plot = FarmPlot.from_collider(player.ray.get_collider())
 	var want := 1.0 if _pouring else 0.0
 	_tip = move_toward(_tip, want, delta * 4.0)
 	player.viewmodel.pose_pour(_tip)

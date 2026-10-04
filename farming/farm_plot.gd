@@ -68,6 +68,29 @@ func _ready() -> void:
 	refresh()
 
 
+## The plot a raycast hit belongs to (the plot itself, or a plant/weed hit area on it).
+static func from_collider(n: Object) -> FarmPlot:
+	var node := n as Node
+	while node != null and not (node is FarmPlot):
+		node = node.get_parent()
+	return node as FarmPlot
+
+
+## A small invisible target so the crosshair can pick out a plant or weed.
+static func _hit_area(radius: float, height: float) -> Area3D:
+	var a := Area3D.new()
+	a.monitoring = false
+	a.monitorable = false
+	var shape := CollisionShape3D.new()
+	var cyl := CylinderShape3D.new()
+	cyl.radius = radius
+	cyl.height = height
+	shape.shape = cyl
+	shape.position.y = height / 2.0
+	a.add_child(shape)
+	return a
+
+
 # --- Coordinates ----------------------------------------------------------------------------
 
 ## World point -> plot space (0..1, 0..1).
@@ -178,6 +201,11 @@ func _refresh_plants() -> void:
 			n.rotation.y = _cell_yaw[i]
 			if state.coverage(i) == 2:
 				n.scale = Vector3.ONE * 1.12
+		var tall := 0.85 if String(state.crop.id) in ["barley", "wheat"] else 0.35
+		var h := 0.15 if key.begins_with("cut:") else tall * maxf(0.3, state.growth_fraction())
+		var area := _hit_area(0.2, h)
+		area.scale = Vector3.ONE / n.scale
+		n.add_child(area)
 		add_child(n)
 		_plants[i] = n
 		if grew:
@@ -195,6 +223,7 @@ func _refresh_weeds() -> void:
 		w.position = to_local(to_world(state.weeds[i]))
 		w.rotation.y = float(i) * 2.1
 		w.scale = Vector3.ONE * (0.9 + 0.15 * (i % 3))
+		w.add_child(_hit_area(0.13, 0.3))
 		add_child(w)
 		_weed_nodes.append(w)
 
@@ -206,7 +235,8 @@ func _refresh_caterpillars() -> void:
 		for k in state.caterpillars[i]:
 			var c := Models.make(&"caterpillar")
 			var a := float(k) * 2.2 + _cell_yaw[i]
-			c.position = to_local(cell_world(i)) + Vector3(cos(a) * 0.12, 0.2 + 0.03 * k, sin(a) * 0.12)
+			var r := 0.04 + 0.1 * state.growth_fraction()
+			c.position = to_local(cell_world(i)) + Vector3(cos(a) * r, 0.04 + 0.18 * state.growth_fraction() + 0.02 * k, sin(a) * r)
 			c.rotation = Vector3(0.3, a, 0)
 			c.scale = Vector3.ONE * 1.5
 			_caterpillar_root.add_child(c)
