@@ -11,6 +11,7 @@ extends Node
 ## --shot=path     save a screenshot after --wait seconds (default 2.5), then quit
 ## --hold=slot     select a hotbar slot
 ## --click         left-click whatever is under the crosshair (starts its minigame)
+## --interact      press E on whatever is under the crosshair
 ## --newgame       after a second, run New Game once (checks a clean scene reload)
 
 var args: Dictionary = {}
@@ -56,6 +57,11 @@ func apply(world: Node3D, player: Player) -> void:
 		await get_tree().create_timer(1.0).timeout
 		world.new_game()
 		return
+	if args.has("interact"):
+		await get_tree().create_timer(0.6).timeout
+		player._update_target()
+		if player.target and player.target.has_method("interact"):
+			player.target.interact(player)
 	if args.has("click"):
 		await get_tree().create_timer(0.6).timeout
 		player._update_target()

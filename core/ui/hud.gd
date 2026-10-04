@@ -7,7 +7,7 @@ signal new_game_requested
 signal save_requested
 
 const INK := Color(0.98, 0.94, 0.82)
-const PARCHMENT := Color(0.16, 0.12, 0.08, 0.88)
+const PARCHMENT := Color(0.16, 0.12, 0.08, 0.95)
 const ACCENT := Color(0.86, 0.68, 0.32)
 
 var player: Player

@@ -9,12 +9,12 @@ const BASE_ROT := Vector3(0.12, 0.0, 0.0)
 
 ## How each tool sits in the hand (rotation of the model at the grip).
 const GRIP_ROT := {
-	&"hoe": Vector3(-1.05, 0.0, 0.45), &"flail": Vector3(-1.0, 0.0, 0.45), &"sickle": Vector3(-0.5, 0.0, 0.2),
+	&"hoe": Vector3(-0.55, 0.0, 0.75), &"flail": Vector3(-0.5, 0.0, 0.75), &"sickle": Vector3(-0.5, 0.0, 0.2),
 	&"bucket": Vector3(0.0, 0.3, 0.0), &"winnowing_basket": Vector3(0.0, 0.0, 0.0), &"seed_pouch": Vector3(0.2, 0, 0),
 	&"scarecrow": Vector3(-0.3, 0.0, 0.3),
 }
 const GRIP_POS := {
-	&"hoe": Vector3(0, 0, 0.1), &"flail": Vector3(0, 0, 0.1), &"winnowing_basket": Vector3(-0.2, -0.05, -0.05),
+	&"hoe": Vector3(0, -0.3, 0.1), &"flail": Vector3(0, -0.3, 0.1), &"winnowing_basket": Vector3(-0.2, -0.05, -0.05),
 	&"scarecrow": Vector3(0, -0.4, 0),
 }
 
