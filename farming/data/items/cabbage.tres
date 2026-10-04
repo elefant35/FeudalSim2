@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://core/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"cabbage"
+display_name = "Cabbage"
+description = "Edible raw."
+kind = 2
+buy_price = 0
+buy_quantity = 1
+sell_price = 5
+food_value = 25.0
+has_quality = true
+crop = &""
+hotbar = false

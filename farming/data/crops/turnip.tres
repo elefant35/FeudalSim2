@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CropData" format=3]
+
+[ext_resource type="Script" path="res://farming/crop_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"turnip"
+display_name = "Turnip"
+seed_item = &"turnip_seed"
+product_item = &"turnip"
+sow_seasons = PackedInt32Array(0, 1, 2)
+grow_days = 5.0
+season_growth = PackedFloat32Array(1.0, 1.0, 0.9, 0.35)
+hardy = true
+harvest = 0
+gets_caterpillars = false
+blight_chance = 0.004
+look = &"turnip"

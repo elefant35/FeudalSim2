@@ -11,3 +11,6 @@ builds/
 # Secrets / local
 .env
 .DS_Store
+
+# Downloaded source packs (only used files are copied into assets/)
+.vendor/
