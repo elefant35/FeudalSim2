@@ -145,6 +145,12 @@ def set_origin(o, point):
     bpy.context.scene.cursor.location = (0, 0, 0)
 
 
+def attach(child, parent):
+    """Parents without moving the child (keeps its world position)."""
+    child.parent = parent
+    child.matrix_parent_inverse = parent.matrix_world.inverted()
+
+
 def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True)
 
@@ -168,7 +174,7 @@ def model(fn):
 @model
 def fp_arm():
     parts = [
-        segment("sleeve", (0, -0.05, -0.01), (0, 0.27, 0), 0.05, "linen", 8, r2=0.042),
+        segment("sleeve", (0, -0.5, -0.01), (0, 0.27, 0), 0.056, "linen", 8, r2=0.042),
         segment("cuff", (0, 0.25, 0), (0, 0.29, 0), 0.047, "linen_dark", 8),
         box("palm", (0.075, 0.09, 0.035), (0, 0.33, 0), "skin"),
         box("fingers", (0.072, 0.04, 0.045), (0, 0.38, -0.012), "skin", rot=(25, 0, 0)),
@@ -182,7 +188,7 @@ def fp_arm():
 @model
 def fp_arm_l():
     parts = [
-        segment("sleeve", (0, -0.05, -0.01), (0, 0.27, 0), 0.05, "linen", 8, r2=0.042),
+        segment("sleeve", (0, -0.5, -0.01), (0, 0.27, 0), 0.056, "linen", 8, r2=0.042),
         segment("cuff", (0, 0.25, 0), (0, 0.29, 0), 0.047, "linen_dark", 8),
         box("palm", (0.075, 0.09, 0.035), (0, 0.33, 0), "skin"),
         box("fingers", (0.072, 0.04, 0.045), (0, 0.38, -0.012), "skin", rot=(25, 0, 0)),
@@ -242,7 +248,7 @@ def flail():
     swingle = join([segment("swingle", (0, 0, 0.78), (0, 0.0, 1.3), 0.024, "wood_dark", 6),
                     torus("link", 0.022, 0.008, (0, 0, 0.78), "leather", rot=(90, 0, 0), seg=8)], "swingle")
     set_origin(swingle, (0, 0, 0.77))
-    swingle.parent = staff
+    attach(swingle, staff)
     export("flail")
 
 
@@ -507,7 +513,7 @@ def crow():
         w = box("wing_l" if side < 0 else "wing_r", (0.2, 0.16, 0.015), (side * 0.13, -0.01, 0.19), "crow", rot=(0, side * -12, 0))
         bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
         set_origin(w, (side * 0.05, 0, 0.19))
-        w.parent = body
+        attach(w, body)
     export("crow")
 
 
@@ -544,7 +550,11 @@ def house():
             parts.append(box("post", (0.16, 0.06 if abs(x) < W / 2 else 0.24, H), (x, y, H / 2), "wood_dark"))
     for y in (D / 2 + 0.02, -D / 2 - 0.02):
         parts.append(box("beam", (W + 0.1, 0.06, 0.16), (0, y, H - 0.08), "wood_dark"))
-        parts.append(box("sole", (W + 0.1, 0.06, 0.16), (0, y, 0.08), "wood_dark"))
+        if y > 0:   # front: leave the doorway clear
+            parts.append(box("sole", ((W + 0.1) / 2 - 0.55, 0.06, 0.16), (-(W + 0.1) / 4 - 0.275, y, 0.08), "wood_dark"))
+            parts.append(box("sole", ((W + 0.1) / 2 - 0.55, 0.06, 0.16), ((W + 0.1) / 4 + 0.275, y, 0.08), "wood_dark"))
+        else:
+            parts.append(box("sole", (W + 0.1, 0.06, 0.16), (0, y, 0.08), "wood_dark"))
     for x in (-W / 2 - 0.02, W / 2 + 0.02):
         parts.append(box("beam", (0.06, D, 0.16), (x, 0, H - 0.08), "wood_dark"))
         parts.append(segment("brace", (x, -D / 2 + 0.2, 0.2), (x, -0.3, H - 0.2), 0.05, "wood_dark", 4))
@@ -566,13 +576,27 @@ def house():
     for side in (-1, 1):
         parts.append(box("thatch", (W + 0.9, run, 0.35), (0, side * (D / 4 + 0.3), H + 1.1 - 0.12), "thatch", rot=(side * -math.degrees(slope), 0, 0)))
     parts.append(box("ridge", (W + 0.95, 0.4, 0.3), (0, 0, ridge + 0.05), "straw_dark", rot=(45, 0, 0)))
-    # Chimney.
-    parts.append(box("chimney", (0.7, 0.7, 4.8), (-W / 2 + 0.6, -D / 2 + 0.6, 2.4), "stone"))
-    # Interior: hearth, bed, table, stools, shelf, barrel, pots.
-    parts.append(box("hearth", (1.3, 1.0, 0.25), (-W / 2 + 0.75, -D / 2 + 0.75, 0.12), "stone_dark"))
-    parts.append(box("embers", (0.6, 0.5, 0.06), (-W / 2 + 0.75, -D / 2 + 0.75, 0.27), mat("ember", 0.9, emit=1.5)))
-    for i in range(5):
-        parts.append(segment(f"log{i}", (-W / 2 + 0.5 + i * 0.12, -D / 2 + 0.55, 0.3), (-W / 2 + 0.7 + i * 0.05, -D / 2 + 0.95, 0.3), 0.04, "wood_dark", 5))
+    # Fireplace: a stone chimney breast on the left gable wall with an open firebox, and the
+    # chimney stack running up the outside of the gable.
+    fx, fy = -W / 2 + t / 2, -0.9          # inner face of the wall, centre of the fireplace
+    parts += [
+        box("jamb_l", (0.6, 0.32, 1.0), (fx + 0.3, fy - 0.61, 0.5), "stone"),
+        box("jamb_r", (0.6, 0.32, 1.0), (fx + 0.3, fy + 0.61, 0.5), "stone"),
+        box("firebox_back", (0.06, 0.9, 1.0), (fx + 0.03, fy, 0.5), "hearth"),
+        box("firebox_top", (0.6, 0.9, 0.06), (fx + 0.3, fy, 0.97), "hearth"),
+        box("mantel", (0.7, 1.6, 0.14), (fx + 0.33, fy, 1.07), "wood_dark"),
+        box("breast", (0.5, 1.3, H - 1.14), (fx + 0.25, fy, 1.14 + (H - 1.14) / 2), "stone"),
+        box("hearthstone", (0.9, 1.6, 0.06), (fx + 0.45, fy, 0.03), "stone_dark"),
+        box("stack", (0.9, 1.3, H + 2.9), (-W / 2 - 0.45 - t / 2, fy, (H + 2.9) / 2), "stone"),
+        box("stack_cap", (1.0, 1.4, 0.15), (-W / 2 - 0.45 - t / 2, fy, H + 2.9), "stone_dark"),
+        box("pot_on_mantel", (0.12, 0.12, 0.16), (fx + 0.33, fy + 0.5, 1.22), "pot"),
+    ]
+    for i in range(3):
+        parts.append(segment(f"log{i}", (fx + 0.15, fy - 0.3 + i * 0.3, 0.1), (fx + 0.5, fy - 0.15 + i * 0.15, 0.12), 0.045, "wood_dark", 5))
+    flames = [cyl(f"flame{i}", 0.09 - i * 0.02, 0.35 - i * 0.06, (fx + 0.3 + (i - 1) * 0.04, fy + (i - 1) * 0.12, 0.3), mat("ember", 0.9, emit=4.0), verts=6, r2=0.0) for i in range(3)]
+    flames.append(box("coals", (0.4, 0.6, 0.04), (fx + 0.3, fy, 0.08), mat("ember", 0.9, emit=2.0)))
+    fire = join(flames, "fire")
+    set_origin(fire, (fx + 0.3, fy, 0.08))
     bx, by = W / 2 - 1.05, -D / 2 + 1.25
     parts += [
         box("bed_frame", (1.0, 2.0, 0.35), (bx, by, 0.25), "wood"),
@@ -600,6 +624,77 @@ def house():
     parts.append(box("door", (0.08, 1.0, 1.9), (0.55 + 0.45, D / 2 + 0.45, 0.95), "wood_dark", rot=(0, 0, 0)))
     join(parts, "house")
     export("house")
+
+
+@model
+def barrel():
+    random.seed(12)
+    parts = [cyl("staves", 0.3, 0.84, (0, 0, 0.42), "wood_light", verts=12, r2=0.3)]
+    # Bulge the middle by stacking a slightly wider band.
+    parts.append(cyl("belly", 0.33, 0.4, (0, 0, 0.42), "wood_light", verts=12))
+    for z in (0.1, 0.32, 0.52, 0.74):
+        parts.append(torus(f"hoop{z}", 0.315 if z in (0.1, 0.74) else 0.335, 0.012, (0, 0, z), "iron", seg=12))
+    parts.append(cyl("lid", 0.285, 0.02, (0, 0, 0.84), "wood", verts=12))
+    join(parts, "barrel")
+    export("barrel")
+
+
+@model
+def crate():
+    parts = []
+    S = 0.6
+    for side in range(4):
+        a = side * math.pi / 2
+        for k in range(3):
+            parts.append(box(f"slat{side}{k}", (S, 0.03, 0.16), (math.cos(a) * (S / 2 - 0.015) if side % 2 == 0 else 0, math.sin(a) * (S / 2 - 0.015) if side % 2 else 0, 0.1 + k * 0.2), "wood_light", rot=(0, 0, math.degrees(a) + 90)))
+    for x in (-1, 1):
+        for y in (-1, 1):
+            parts.append(box("corner", (0.05, 0.05, S), (x * (S / 2 - 0.025), y * (S / 2 - 0.025), S / 2), "wood_dark"))
+    parts.append(box("bottom", (S, S, 0.03), (0, 0, 0.015), "wood"))
+    parts.append(box("lid1", (S, 0.18, 0.03), (0, -0.2, S), "wood"))
+    parts.append(box("lid2", (S, 0.18, 0.03), (0, 0.02, S), "wood"))
+    join(parts, "crate")
+    export("crate")
+
+
+@model
+def lantern_post():
+    parts = [box("post", (0.14, 0.14, 2.2), (0, 0, 1.1), "wood_dark"),
+             box("arm", (0.6, 0.08, 0.08), (0.27, 0, 2.1), "wood_dark"),
+             segment("brace", (0, 0, 1.8), (0.3, 0, 2.08), 0.025, "wood_dark", 4),
+             segment("hook", (0.5, 0, 2.08), (0.5, 0, 1.95), 0.008, "iron", 4),
+             box("cage_top", (0.2, 0.2, 0.04), (0.5, 0, 1.94), "iron"),
+             box("cage_bottom", (0.18, 0.18, 0.03), (0.5, 0, 1.68), "iron")]
+    for x in (-1, 1):
+        for y in (-1, 1):
+            parts.append(box("bar", (0.015, 0.015, 0.26), (0.5 + x * 0.08, y * 0.08, 1.81), "iron"))
+    join(parts, "lantern_post")
+    glow = cyl("candle", 0.03, 0.12, (0.5, 0, 1.77), mat("ember", 0.9, emit=5.0), verts=6)
+    glow.name = "candle"
+    export("lantern_post")
+
+
+@model
+def farm_cart():
+    """A two-wheeled wooden farm cart with shafts, bed along +Y."""
+    parts = [box("bed", (1.3, 2.0, 0.08), (0, 0, 0.75), "wood"),
+             box("side_l", (0.06, 2.0, 0.35), (-0.62, 0, 0.95), "wood_light"),
+             box("side_r", (0.06, 2.0, 0.35), (0.62, 0, 0.95), "wood_light"),
+             box("back", (1.3, 0.06, 0.35), (0, -0.97, 0.95), "wood_light"),
+             box("front", (1.3, 0.06, 0.35), (0, 0.97, 0.95), "wood_light"),
+             segment("axle", (-0.8, 0, 0.45), (0.8, 0, 0.45), 0.04, "wood_dark", 6),
+             segment("shaft_l", (-0.45, 0.9, 0.72), (-0.4, 2.4, 0.45), 0.04, "wood_dark", 6),
+             segment("shaft_r", (0.45, 0.9, 0.72), (0.4, 2.4, 0.45), 0.04, "wood_dark", 6),
+             box("prop", (0.06, 0.06, 0.45), (0, 2.2, 0.22), "wood_dark")]
+    for side in (-1, 1):
+        x = side * 0.78
+        parts.append(torus(f"rim{side}", 0.42, 0.04, (x, 0, 0.45), "wood_dark", rot=(0, 90, 0), seg=16))
+        parts.append(cyl(f"hub{side}", 0.08, 0.14, (x, 0, 0.45), "wood", rot=(0, 90, 0), verts=8))
+        for k in range(8):
+            a = k / 8 * math.tau
+            parts.append(segment(f"spoke{side}{k}", (x, 0, 0.45), (x, math.cos(a) * 0.4, 0.45 + math.sin(a) * 0.4), 0.018, "wood", 4))
+    join(parts, "farm_cart")
+    export("farm_cart")
 
 
 @model
@@ -653,8 +748,8 @@ def bed_marker():
 @model
 def signboard():
     parts = [segment("post", (0, 0, 0), (0, 0, 1.6), 0.05, "wood_dark", 6),
-             box("board", (1.2, 0.06, 0.45), (0, 0, 1.45), "wood_light"),
-             box("trim", (1.26, 0.07, 0.04), (0, 0, 1.69), "wood_dark")]
+             box("board", (1.7, 0.06, 0.42), (0, 0, 1.45), "wood_light"),
+             box("trim", (1.76, 0.07, 0.04), (0, 0, 1.67), "wood_dark")]
     join(parts, "signboard")
     export("signboard")
 

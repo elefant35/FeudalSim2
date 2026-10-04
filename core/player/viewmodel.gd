@@ -1,80 +1,132 @@
 class_name Viewmodel
 extends Node3D
-## First-person hands and the held item. Actions are short tweened animations layered over a
-## per-tool resting pose and a walking bob. Poses are offsets (position, euler rotation) per arm.
+## First-person hands and the held tool.
+##
+## The tool's pose (where it is and which way it points) is what gets animated. Every frame the
+## hands are put on the tool's grip points and the arms reach back to fixed shoulders, so hands
+## and tool always line up. A free hand (one-handed tools, bare hands) has its own resting spot
+## plus an animated offset for actions like throwing seed or pulling weeds.
+##
+## Coordinates are camera space in metres; the whole viewmodel is drawn at a third of real size
+## (and a third as far away), which looks identical but keeps tools from poking into the world.
 
-const RIGHT_BASE_POS := Vector3(0.25, -0.33, -0.42)
-const LEFT_BASE_POS := Vector3(-0.27, -0.36, -0.44)
-const BASE_ROT := Vector3(0.12, 0.0, 0.0)
-
-## How each tool sits in the hand (rotation of the model at the grip).
-const GRIP_ROT := {
-	&"hoe": Vector3(-0.55, 0.0, 0.75), &"flail": Vector3(-0.5, 0.0, 0.75), &"sickle": Vector3(-0.5, 0.0, 0.2),
-	&"bucket": Vector3(0.0, 0.3, 0.0), &"winnowing_basket": Vector3(0.0, 0.0, 0.0), &"seed_pouch": Vector3(0.2, 0, 0),
-	&"scarecrow": Vector3(-0.3, 0.0, 0.3),
-}
-const GRIP_POS := {
-	&"hoe": Vector3(0, -0.3, 0.1), &"flail": Vector3(0, -0.3, 0.1), &"winnowing_basket": Vector3(-0.2, -0.05, -0.05),
-	&"scarecrow": Vector3(0, -0.4, 0),
-}
-
-## Resting offsets per held item: [right_pos, right_rot, left_pos, left_rot, left_visible]
-const HOLD_POSES := {
-	&"hands": [Vector3(0.02, -0.14, 0.06), Vector3(0.2, 0, 0), Vector3(-0.02, -0.14, 0.06), Vector3(0.2, 0, 0), true],
-	&"hoe": [Vector3(0.0, -0.04, 0.05), Vector3(0.25, 0.25, -0.1), Vector3(0.18, -0.12, -0.05), Vector3(0.3, 0.3, 0), true],
-	&"bucket": [Vector3(0.02, -0.12, 0.05), Vector3(-0.1, 0, 0), Vector3.ZERO, Vector3.ZERO, false],
-	&"sickle": [Vector3(0, -0.02, 0), Vector3(0.1, 0.1, -0.2), Vector3.ZERO, Vector3.ZERO, true],
-	&"flail": [Vector3(0.0, -0.04, 0.04), Vector3(0.4, 0.2, -0.1), Vector3(0.16, -0.1, -0.04), Vector3(0.4, 0.2, 0), true],
-	&"winnowing_basket": [Vector3(-0.1, -0.08, -0.05), Vector3(0.1, 0, 0), Vector3(0.1, -0.08, -0.05), Vector3(0.1, 0, 0), true],
-	&"seed": [Vector3(0, -0.04, 0), Vector3(0.1, 0, 0), Vector3(0.04, -0.06, 0.02), Vector3.ZERO, true],
-	&"scarecrow": [Vector3(0.0, -0.05, 0.05), Vector3(0.1, 0.4, 0), Vector3.ZERO, Vector3.ZERO, false],
-}
+const SHOULDER_R := Vector3(0.36, -0.62, 0.14)
+const SHOULDER_L := Vector3(-0.36, -0.62, 0.14)
+const HAND_IN_ARM := Vector3(0, 0, -0.33)   ## Palm centre in the arm model.
+const HAND_REST_R := Vector3(0.22, -0.46, -0.42)    ## A free hand, mostly out of view.
+const HAND_REST_L := Vector3(-0.22, -0.48, -0.44)
+const HAND_SHOW_R := Vector3(0.2, -0.3, -0.44)      ## Bare hands, visible at the bottom.
+const HAND_SHOW_L := Vector3(-0.2, -0.31, -0.45)
 
 var right_arm := Node3D.new()
 var left_arm := Node3D.new()
-var grip := Node3D.new()        ## Right-hand attachment point.
-var left_grip := Node3D.new()
+var r_off := Vector3.ZERO   ## Animated offsets for free hands.
+var l_off := Vector3.ZERO
 
-# Animated offsets (tweens drive these).
-var r_pos := Vector3.ZERO
-var r_rot := Vector3.ZERO
-var l_pos := Vector3.ZERO
-var l_rot := Vector3.ZERO
-
-var _hold: Array = HOLD_POSES[&"hands"]
+var _specs: Dictionary = {}
+var _spec: Dictionary = {}
 var _held_id: StringName = &""
-var _held_model: Node3D = null
-var _walk: float = 0.0
-var _bob_t: float = 0.0
-var _tween: Tween = null
+var _model: Node3D = null
+var _swingle: Node3D = null
+var _xf := Transform3D.IDENTITY           ## Current tool pose.
+var _swing_angle := 2.4                   ## Flail swingle droop (radians).
+var _tool_tween: Tween
+var _hand_tween: Tween
+var _walk := 0.0
+var _bob_t := 0.0
+var _bucket_fill := 0.0
 var _left_food: Node3D = null
-var _bucket_fill: float = 0.0
+
+
+static func _basis(up: Vector3, front: Vector3, s: float = 1.0) -> Basis:
+	var y := up.normalized()
+	var f := (front - y * front.dot(y)).normalized()
+	var z := -f
+	var x := y.cross(z)
+	return Basis(x, y, z).scaled(Vector3.ONE * s)
+
+
+static func _pose(pos: Vector3, up: Vector3, front: Vector3, s: float = 1.0) -> Transform3D:
+	return Transform3D(_basis(up, front, s), pos)
+
+
+func _build_specs() -> void:
+	# grip_r / grip_l: where each hand holds the model (model space); absent = a free hand.
+	# roll: twists the forearm so the fist wraps the handle.
+	var hoe_like := {
+		"rest": _pose(Vector3(0.24, -0.29, -0.52), Vector3(-0.2, 0.75, -0.62), Vector3(0, -0.6, -0.8)),
+		"raised": _pose(Vector3(0.24, -0.26, -0.42), Vector3(-0.1, 0.9, 0.35), Vector3(0, 0, -1)),
+		"struck": _pose(Vector3(0.18, -0.4, -0.6), Vector3(-0.1, -0.15, -1), Vector3(0, -1, 0)),
+	}
+	_specs = {
+		&"hoe": {"model": &"hoe", "grip_r": Vector3(0, 0, 0), "grip_l": Vector3(0, 0.38, 0), "roll_r": 1.3, "roll_l": -1.3, "poses": hoe_like},
+		&"flail": {"model": &"flail", "grip_r": Vector3(0, 0, 0), "grip_l": Vector3(0, 0.36, 0), "roll_r": 1.3, "roll_l": -1.3, "poses": hoe_like},
+		&"sickle": {"model": &"sickle", "grip_r": Vector3(0, 0, 0), "roll_r": 1.4, "poses": {
+			"rest": _pose(Vector3(0.24, -0.3, -0.46), Vector3(0.05, 0.9, -0.4), Vector3(-0.4, 0, -1)),
+			"sweep_a": _pose(Vector3(0.42, -0.26, -0.5), Vector3(0.6, 0.35, -0.7), Vector3(-1, 0, 0)),
+			"sweep_b": _pose(Vector3(-0.22, -0.32, -0.56), Vector3(-0.6, 0.15, -0.75), Vector3(-1, -0.2, 0.3)),
+		}},
+		&"bucket": {"model": &"bucket", "grip_r": Vector3(0, 0, 0), "roll_r": 0.2, "poses": {
+			"rest": _pose(Vector3(0.24, -0.16, -0.46), Vector3(0, 1, 0), Vector3(0, 0, -1)),
+			"pour": _pose(Vector3(0.14, -0.1, -0.58), Vector3(0.15, 0.1, -1), Vector3(0, -1, 0)),
+		}},
+		&"winnowing_basket": {"model": &"winnowing_basket", "grip_r": Vector3(0.32, 0.06, 0), "grip_l": Vector3(-0.32, 0.06, 0),
+			"roll_r": -1.2, "roll_l": 1.2, "poses": {
+			"rest": _pose(Vector3(0, -0.4, -0.62), Vector3(0, 1, 0.35), Vector3(0, 0, -1)),
+			"lifted": _pose(Vector3(0, -0.24, -0.66), Vector3(0, 1, 0.2), Vector3(0, 0, -1)),
+			"toss": _pose(Vector3(0, -0.06, -0.72), Vector3(0, 1, -0.35), Vector3(0, 0, -1)),
+		}},
+		&"seed_pouch": {"model": &"seed_pouch", "grip_l": Vector3(0, 0.02, 0), "roll_l": 0.4, "poses": {
+			"rest": _pose(Vector3(-0.2, -0.32, -0.46), Vector3(0, 1, 0.2), Vector3(0, 0, -1)),
+		}},
+		&"scarecrow": {"model": &"scarecrow", "grip_r": Vector3(0, 0.9, 0), "roll_r": 1.4, "poses": {
+			"rest": _pose(Vector3(0.32, -0.72, -0.8), Vector3(-0.15, 1, -0.25), Vector3(0, 0, -1), 0.45),
+		}},
+		&"hands": {"poses": {"rest": Transform3D.IDENTITY}},
+	}
 
 
 func _ready() -> void:
-	# Drawn at a third of real size, a third as far away: looks the same, but tools don't
-	# poke into the ground or walls.
 	scale = Vector3.ONE * 0.33
+	_build_specs()
 	add_child(right_arm)
 	right_arm.add_child(Models.make(&"fp_arm"))
 	add_child(left_arm)
 	left_arm.add_child(Models.make(&"fp_arm_l"))
-	grip.position = Vector3(0, 0.0, -0.36)
-	right_arm.add_child(grip)
-	left_grip.position = Vector3(0, 0.0, -0.36)
-	left_arm.add_child(left_grip)
-	_set_layers(self)
+	_spec = _specs[&"hands"]
+	_no_shadows(self)
 
 
 func _process(delta: float) -> void:
 	_bob_t += delta * (6.0 + 4.0 * _walk)
 	var bob := Vector3(sin(_bob_t) * 0.012, absf(cos(_bob_t)) * 0.016, 0) * _walk
-	var idle := Vector3(0, sin(Time.get_ticks_msec() / 900.0) * 0.003, 0)
-	right_arm.position = RIGHT_BASE_POS + _hold[0] + r_pos + bob + idle
-	right_arm.rotation = BASE_ROT + _hold[1] + r_rot
-	left_arm.position = LEFT_BASE_POS + _hold[2] + l_pos + bob * Vector3(-1, 1, 1) + idle
-	left_arm.rotation = BASE_ROT + _hold[3] + l_rot
-	left_arm.visible = _hold[4] or _left_food != null
+	bob.y += sin(Time.get_ticks_msec() / 900.0) * 0.003
+	var xf := _xf.translated(bob)
+	if _model:
+		_model.transform = xf
+	if _swingle:
+		_swingle.rotation.x = _swing_angle
+	var bare := _held_id == Player.HANDS or _held_id == &""
+	var rest_r := HAND_SHOW_R if bare else HAND_REST_R
+	var rest_l := HAND_SHOW_L if bare else HAND_REST_L
+	var target_r: Vector3 = xf * (_spec.grip_r as Vector3) if _model and _spec.has("grip_r") else rest_r + r_off + bob
+	var target_l: Vector3 = xf * (_spec.grip_l as Vector3) if _model and _spec.has("grip_l") and _left_food == null else rest_l + l_off + bob * Vector3(-1, 1, 1)
+	_place_arm(right_arm, SHOULDER_R, target_r, _spec.get("roll_r", 0.0))
+	_place_arm(left_arm, SHOULDER_L, target_l, _spec.get("roll_l", 0.0))
+	if _left_food:
+		_left_food.position = target_l + Vector3(0.02, 0.05, -0.02)
+
+
+## Puts the arm's palm on `target`, the forearm pointing back towards the shoulder.
+func _place_arm(arm: Node3D, shoulder: Vector3, target: Vector3, roll: float) -> void:
+	var dir := (target - shoulder).normalized()
+	var b := Basis.looking_at(dir, Vector3.UP) * Basis(Vector3(0, 0, 1), roll)
+	arm.transform = Transform3D(b, target - b * HAND_IN_ARM)
+
+
+func _pose_named(name: String) -> Transform3D:
+	var poses: Dictionary = _spec.poses
+	return poses.get(name, poses.rest)
 
 
 func set_walk(amount: float) -> void:
@@ -85,164 +137,165 @@ func set_held(id: StringName) -> void:
 	if id == _held_id:
 		return
 	_held_id = id
-	if _held_model:
-		_held_model.queue_free()
-		_held_model = null
+	if _model:
+		_model.queue_free()
+		_model = null
+		_swingle = null
 	var it := Items.item(id)
-	var pose_key: StringName = &"seed" if it and it.kind == ItemData.Kind.SEED else id
-	_hold = HOLD_POSES.get(pose_key, HOLD_POSES[&"hands"])
-	if id != Player.HANDS:
-		var model_id: StringName = &"seed_pouch" if pose_key == &"seed" else id
-		_held_model = Models.make(model_id)
-		_held_model.rotation = GRIP_ROT.get(model_id, Vector3.ZERO)
-		_held_model.position = GRIP_POS.get(model_id, Vector3.ZERO)
-		if model_id == &"scarecrow":
-			_held_model.scale = Vector3.ONE * 0.5
-		grip.add_child(_held_model)
-		_set_layers(_held_model)
+	var key: StringName = &"seed_pouch" if it and it.kind == ItemData.Kind.SEED else id
+	_spec = _specs.get(key, _specs[&"hands"])
+	if _spec.has("model"):
+		_model = Models.make(_spec.model)
+		add_child(_model)
+		_no_shadows(_model)
+		_swingle = _model.find_child("swingle", true, false)
 		if id == &"bucket":
 			set_bucket_fill(_bucket_fill)
-		var basket_grain := _held_model.find_child("grain", true, false) as Node3D
-		if basket_grain:
-			basket_grain.visible = false
-	# Swap animation: dip out and back up.
-	r_pos = Vector3(0, -0.25, 0.05)
-	_play().tween_property(self, "r_pos", Vector3.ZERO, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		var grain := _model.find_child("grain", true, false) as Node3D
+		if grain:
+			grain.visible = false
+	# Swap animation: bring the new tool up from below.
+	var rest := _pose_named("rest")
+	_xf = rest.translated(Vector3(0, -0.3, 0.05))
+	r_off = Vector3(0, -0.2, 0)
+	l_off = Vector3(0, -0.2, 0)
+	_animate([[rest, 0.25]])
+	_hands_to(Vector3.ZERO, Vector3.ZERO, 0.25)
+
+
+func held_model() -> Node3D:
+	return _model
 
 
 ## Shows or hides the water surface in the held bucket.
 func set_bucket_fill(amount: float) -> void:
 	_bucket_fill = amount
-	if _held_model and _held_id == &"bucket":
-		var w := _held_model.find_child("water", true, false) as Node3D
+	if _model and _held_id == &"bucket":
+		var w := _model.find_child("water", true, false) as Node3D
 		if w:
 			w.visible = amount > 0.0
 
 
-func held_model() -> Node3D:
-	return _held_model
-
-
-## Keeps the viewmodel from clipping into the world: render it on its own layer, no shadows.
-func _set_layers(n: Node) -> void:
+func _no_shadows(n: Node) -> void:
 	if n is GeometryInstance3D:
 		(n as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for c in n.get_children():
-		_set_layers(c)
+		_no_shadows(c)
 
 
-func _play() -> Tween:
-	if _tween and _tween.is_valid():
-		_tween.kill()
-	_tween = create_tween()
-	return _tween
+# --- Animation plumbing -----------------------------------------------------------------------
+
+## Moves the tool through a list of [pose, seconds] keys.
+func _animate(keys: Array) -> Tween:
+	if _tool_tween and _tool_tween.is_valid():
+		_tool_tween.kill()
+	_tool_tween = create_tween()
+	var from := _xf
+	for k: Array in keys:
+		var to: Transform3D = k[0]
+		var f := from
+		_tool_tween.tween_method(func(t: float) -> void: _xf = f.interpolate_with(to, t), 0.0, 1.0, k[1]) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		from = to
+	return _tool_tween
 
 
-func _reset_to(t: Tween, dur: float) -> void:
-	t.set_parallel(true)
-	t.tween_property(self, "r_pos", Vector3.ZERO, dur)
-	t.tween_property(self, "r_rot", Vector3.ZERO, dur)
-	t.tween_property(self, "l_pos", Vector3.ZERO, dur)
-	t.tween_property(self, "l_rot", Vector3.ZERO, dur)
+func _hands_to(r: Vector3, l: Vector3, dur: float) -> Tween:
+	if _hand_tween and _hand_tween.is_valid():
+		_hand_tween.kill()
+	_hand_tween = create_tween().set_parallel(true)
+	_hand_tween.tween_property(self, "r_off", r, dur).set_trans(Tween.TRANS_SINE)
+	_hand_tween.tween_property(self, "l_off", l, dur).set_trans(Tween.TRANS_SINE)
+	return _hand_tween
 
 
-# --- Continuous poses (driven every frame by a minigame) ------------------------------------
+func _stop_tweens() -> void:
+	if _tool_tween and _tool_tween.is_valid():
+		_tool_tween.kill()
+	if _hand_tween and _hand_tween.is_valid():
+		_hand_tween.kill()
 
-## Hoe/flail wind-up: 0 resting, 1 fully raised overhead.
+
+# --- Continuous poses (a minigame drives these every frame) ---------------------------------
+
+## Hoe/flail wind-up: 0 resting, 1 raised overhead.
 func pose_raise(amount: float) -> void:
-	r_rot = Vector3(-1.1 * amount, 0, 0.2 * amount)
-	r_pos = Vector3(0, 0.22 * amount, 0.12 * amount)
-	l_rot = r_rot
-	l_pos = Vector3(0, 0.18 * amount, 0.1 * amount)
+	_stop_tweens()
+	_xf = _pose_named("rest").interpolate_with(_pose_named("raised"), clampf(amount, 0.0, 1.0))
+	_swing_angle = lerpf(2.4, 2.9, amount)
 
 
-## Tugging a weed or plant: hands reach down/forward and strain back.
+## Tugging a weed or plant with both hands: reach down, strain back.
 func pose_pull(reach: float, strain: float) -> void:
+	_stop_tweens()
 	var shake := Vector3(randf_range(-1, 1), randf_range(-1, 1), 0) * 0.006 * strain
-	r_pos = Vector3(-0.08, -0.12 * reach, -0.1 * reach + 0.12 * strain) + shake
-	r_rot = Vector3(-0.6 * reach + 0.3 * strain, 0, 0)
-	l_pos = Vector3(0.08, -0.12 * reach, -0.1 * reach + 0.12 * strain) - shake
-	l_rot = r_rot
+	r_off = Vector3(-0.06, 0.08 * reach - 0.05 * strain, -0.14 * reach + 0.1 * strain) + shake
+	l_off = Vector3(0.06, 0.08 * reach - 0.05 * strain, -0.14 * reach + 0.1 * strain) - shake
 
 
-## Tipping the bucket: 0 upright, 1 fully poured.
+## Tipping the bucket: 0 upright, 1 pouring.
 func pose_pour(amount: float) -> void:
-	r_rot = Vector3(-0.2 * amount, 0, 1.3 * amount)
-	r_pos = Vector3(-0.05 * amount, 0.08 * amount, -0.1 * amount)
+	_stop_tweens()
+	_xf = _pose_named("rest").interpolate_with(_pose_named("pour"), clampf(amount, 0.0, 1.0))
 
 
-## Turning a crank: angle in radians.
+## Turning the well's crank with the free left hand.
 func pose_crank(angle: float) -> void:
-	r_pos = Vector3(cos(angle) * 0.07, sin(angle) * 0.07, -0.12)
-	r_rot = Vector3(-0.3, 0, 0)
+	_stop_tweens()
+	l_off = Vector3(0.1 + cos(angle) * 0.07, 0.28 + sin(angle) * 0.07, -0.1)
 
 
 ## Lifting the winnowing basket: 0 low, 1 high.
 func pose_lift(amount: float) -> void:
-	r_pos = Vector3(0, 0.15 * amount, -0.05 * amount)
-	l_pos = r_pos
-	r_rot = Vector3(-0.2 * amount, 0, 0)
-	l_rot = r_rot
+	_stop_tweens()
+	_xf = _pose_named("rest").interpolate_with(_pose_named("lifted"), clampf(amount, 0.0, 1.0))
 
 
-func pose_rest(dur: float = 0.2) -> void:
-	_reset_to(_play(), dur)
+func pose_rest(dur: float = 0.25) -> void:
+	_animate([[_pose_named("rest"), dur]])
+	_hands_to(Vector3.ZERO, Vector3.ZERO, dur)
+	create_tween().tween_property(self, "_swing_angle", 2.4, dur)
 
 
 # --- One-shot actions -----------------------------------------------------------------------
 
 ## Hoe or flail coming down hard.
 func play_strike() -> void:
-	var t := _play()
-	t.set_parallel(true)
-	t.tween_property(self, "r_rot", Vector3(0.75, 0, -0.1), 0.09).set_ease(Tween.EASE_IN)
-	t.tween_property(self, "r_pos", Vector3(0, -0.12, -0.12), 0.09).set_ease(Tween.EASE_IN)
-	t.tween_property(self, "l_rot", Vector3(0.75, 0, 0), 0.09).set_ease(Tween.EASE_IN)
-	t.tween_property(self, "l_pos", Vector3(0, -0.1, -0.1), 0.09).set_ease(Tween.EASE_IN)
-	t.chain().tween_interval(0.08)
-	_reset_to(t.chain(), 0.3)
+	var struck := _pose_named("struck")
+	_animate([[struck, 0.1], [struck, 0.08], [_pose_named("rest"), 0.32]])
+	if _swingle:
+		var s := create_tween()
+		s.tween_property(self, "_swing_angle", 0.3, 0.12).set_ease(Tween.EASE_OUT)
+		s.tween_property(self, "_swing_angle", 2.4, 0.4).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 
 
-## Broadcast sowing: right hand sweeps out and opens.
+## Broadcast sowing: the free right hand dips into the pouch, sweeps out and opens.
 func play_throw() -> void:
-	var t := _play()
-	t.set_parallel(true)
-	t.tween_property(self, "r_pos", Vector3(0.1, -0.05, 0.12), 0.12)
-	t.tween_property(self, "r_rot", Vector3(0.3, -0.5, 0), 0.12)
-	t.chain().set_parallel(true)
-	t.tween_property(self, "r_pos", Vector3(-0.18, 0.05, -0.22), 0.16).set_ease(Tween.EASE_OUT)
-	t.tween_property(self, "r_rot", Vector3(-0.3, 0.7, 0), 0.16).set_ease(Tween.EASE_OUT)
-	_reset_to(t.chain(), 0.25)
+	if _hand_tween and _hand_tween.is_valid():
+		_hand_tween.kill()
+	_hand_tween = create_tween()
+	_hand_tween.tween_property(self, "r_off", Vector3(-0.3, 0.12, -0.02), 0.14).set_trans(Tween.TRANS_SINE)
+	_hand_tween.tween_property(self, "r_off", Vector3(0.12, 0.2, -0.22), 0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_hand_tween.tween_property(self, "r_off", Vector3.ZERO, 0.25).set_trans(Tween.TRANS_SINE)
 
 
 ## Sickle sweep from right to left.
 func play_sweep() -> void:
-	var t := _play()
-	t.set_parallel(true)
-	t.tween_property(self, "r_pos", Vector3(-0.32, -0.08, -0.12), 0.18).set_trans(Tween.TRANS_SINE)
-	t.tween_property(self, "r_rot", Vector3(0.5, 1.1, -0.4), 0.18).set_trans(Tween.TRANS_SINE)
-	t.tween_property(self, "l_pos", Vector3(0.05, -0.05, -0.05), 0.18)
-	_reset_to(t.chain(), 0.3)
+	_animate([[_pose_named("sweep_a"), 0.1], [_pose_named("sweep_b"), 0.18], [_pose_named("rest"), 0.3]])
 
 
-## Quick reach forward and pinch (caterpillars, binding).
+## Quick reach forward and pinch (caterpillars, binding sheaves).
 func play_pick() -> void:
-	var t := _play()
-	t.set_parallel(true)
-	t.tween_property(self, "r_pos", Vector3(-0.06, -0.08, -0.18), 0.12)
-	t.tween_property(self, "r_rot", Vector3(-0.5, 0.2, 0), 0.12)
-	_reset_to(t.chain(), 0.2)
+	if _hand_tween and _hand_tween.is_valid():
+		_hand_tween.kill()
+	_hand_tween = create_tween()
+	_hand_tween.tween_property(self, "r_off", Vector3(-0.08, 0.12, -0.2), 0.12)
+	_hand_tween.tween_property(self, "r_off", Vector3.ZERO, 0.2)
 
 
-## Toss: basket jerks up then drops.
+## Winnowing toss: basket jerks up, then settles.
 func play_toss() -> void:
-	var t := _play()
-	t.set_parallel(true)
-	t.tween_property(self, "r_pos", Vector3(0, 0.2, -0.1), 0.1).set_ease(Tween.EASE_OUT)
-	t.tween_property(self, "l_pos", Vector3(0, 0.2, -0.1), 0.1).set_ease(Tween.EASE_OUT)
-	t.tween_property(self, "r_rot", Vector3(-0.35, 0, 0), 0.1)
-	t.tween_property(self, "l_rot", Vector3(-0.35, 0, 0), 0.1)
-	_reset_to(t.chain(), 0.35)
+	_animate([[_pose_named("toss"), 0.1], [_pose_named("rest"), 0.4]])
 
 
 ## Bring food to the mouth with the left hand.
@@ -251,15 +304,17 @@ func play_eat(id: StringName) -> void:
 		_left_food.queue_free()
 	_left_food = Models.make(id)
 	_left_food.scale = Vector3.ONE * 0.6
-	left_grip.add_child(_left_food)
-	_set_layers(_left_food)
-	var t := _play()
-	t.set_parallel(true)
-	t.tween_property(self, "l_pos", Vector3(0.2, 0.2, 0.15), 0.25)
-	t.tween_property(self, "l_rot", Vector3(-0.6, -0.4, 0), 0.25)
-	t.chain().tween_interval(0.5)
-	t.chain().tween_callback(func() -> void:
+	add_child(_left_food)
+	_no_shadows(_left_food)
+	if _hand_tween and _hand_tween.is_valid():
+		_hand_tween.kill()
+	var mouth := Vector3(0.18, 0.36, 0.1)   # offset from the resting left hand up to the mouth
+	_hand_tween = create_tween()
+	_hand_tween.tween_property(self, "l_off", mouth, 0.3).set_trans(Tween.TRANS_SINE)
+	_hand_tween.tween_property(self, "l_off", mouth + Vector3(0, -0.02, 0.02), 0.15)
+	_hand_tween.tween_property(self, "l_off", mouth, 0.15)
+	_hand_tween.tween_callback(func() -> void:
 		if _left_food:
 			_left_food.queue_free()
 			_left_food = null)
-	_reset_to(t.chain(), 0.25)
+	_hand_tween.tween_property(self, "l_off", Vector3.ZERO, 0.3)

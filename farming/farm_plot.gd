@@ -36,7 +36,7 @@ func _ready() -> void:
 	pm.subdivide_width = 8
 	pm.subdivide_depth = 8
 	top.mesh = pm
-	top.position.y = 0.07
+	top.position.y = 0.075
 	_soil_mat.shader = SOIL_SHADER
 	_soil_mat.set_shader_parameter("grass_tex", load("res://assets/textures/grass_ground_diff.jpg"))
 	_soil_mat.set_shader_parameter("soil_tex", load("res://assets/textures/farm_furrows_diff.jpg"))
@@ -44,7 +44,7 @@ func _ready() -> void:
 	_soil_mat.set_shader_parameter("seed", float(index) * 1.37)
 	top.material_override = _soil_mat
 	add_child(top)
-	var rim := Models.box(Vector3(SIZE, 0.14, SIZE), Color(0.3, 0.22, 0.15), Vector3(0, 0.0, 0))
+	var rim := Models.box(Vector3(SIZE + 0.04, 0.12, SIZE + 0.04), Color(0.3, 0.22, 0.15), Vector3(0, -0.005, 0))
 	add_child(rim)
 
 	var rng := RandomNumberGenerator.new()

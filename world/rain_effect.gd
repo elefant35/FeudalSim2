@@ -17,6 +17,9 @@ static func make() -> GPUParticles3D:
 	pm.initial_velocity_min = 14.0
 	pm.initial_velocity_max = 17.0
 	pm.gravity = Vector3(0, -9.8, 0)
+	# Drops vanish when they hit a GPUParticlesCollision shape (the cottage roof).
+	pm.collision_mode = ParticleProcessMaterial.COLLISION_HIDE_ON_CONTACT
+	p.collision_base_size = 0.05
 	p.process_material = pm
 	var mesh := QuadMesh.new()
 	mesh.size = Vector2(0.015, 0.45)

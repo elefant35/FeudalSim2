@@ -4,6 +4,8 @@ extends RefCounted
 ## coloured box so the game always runs while art is in progress.
 
 const DIR := "res://assets/models"
+## Items drawn with a model of a different name.
+const ALIASES := {&"bread": &"food_loaf"}
 
 static var _scenes: Dictionary = {}
 static var _materials: Dictionary = {}
@@ -14,6 +16,7 @@ static func exists(id: StringName) -> bool:
 
 
 static func make(id: StringName) -> Node3D:
+	id = ALIASES.get(id, id)
 	var path := "%s/%s.glb" % [DIR, id]
 	if not _scenes.has(path):
 		_scenes[path] = load(path) if ResourceLoader.exists(path) else null

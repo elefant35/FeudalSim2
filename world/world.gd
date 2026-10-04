@@ -47,11 +47,13 @@ func _start_fresh() -> void:
 	player.wallet.gold = START_GOLD
 	player.wallet.changed.emit(player.wallet.gold)
 	player.inventory.add(&"hoe")
+	player.inventory.add(&"bucket")
 	player.inventory.add(&"turnip_seed", 12)
 	player.inventory.add(&"bread", 5)
+	player.inventory.add(&"turnip", 4, 1)
 	player.select_slot(1)
 	hud.toast("Spring has come to your farm. Till a plot with your hoe, then sow your turnip seed.")
-	hud.toast("Seed needs water: buy a bucket at the Tools & Seed stall down the lane, and draw water at the well.")
+	hud.toast("Seed needs water: fill your bucket at the well. Press F to eat when you're hungry.")
 
 
 # --- Environment ----------------------------------------------------------------------------
@@ -99,6 +101,15 @@ func _process(_delta: float) -> void:
 			_rain_audio.play()
 		else:
 			_rain_audio.stop()
+	if Clock.raining and player:
+		_rain_audio.volume_db = lerpf(_rain_audio.volume_db, -18.0 if _under_roof() else -8.0, 0.05)
+
+
+## Is there a roof over the player's head?
+func _under_roof() -> bool:
+	var from := player.camera.global_position
+	var q := PhysicsRayQueryParameters3D.create(from, from + Vector3.UP * 8.0, 1, [player.get_rid()])
+	return not get_world_3d().direct_space_state.intersect_ray(q).is_empty()
 
 
 ## Sun arc, light colour and sky tint by hour; dimmer and greyer in rain and winter.
@@ -120,6 +131,8 @@ func _update_sky() -> void:
 	_sky_mat.ground_horizon_color = _sky_mat.sky_horizon_color
 	_sky_mat.ground_bottom_color = Color(0.1, 0.09, 0.07)
 	env.environment.ambient_light_energy = lerpf(0.2, 0.75, daylight)
+	for l in get_tree().get_nodes_in_group("night_light"):
+		(l as Light3D).light_energy = lerpf(1.4, 0.0, daylight)
 	env.environment.fog_light_color = _sky_mat.sky_horizon_color
 	env.environment.fog_density = 0.004 + overcast * 0.012
 
@@ -248,6 +261,47 @@ func dev_scenario(scenario: String) -> void:
 					s.plants[0] = PlotState.Plant.DEAD
 				if c.gets_caterpillars:
 					s.caterpillars[2] = 2
+				field.plots[i].refresh()
+		"crow":
+			# A crow already pecking at fresh seed on the nearest plot.
+			var p0 := field.plots[0]
+			while not p0.state.is_tilled():
+				p0.state.till(1.0)
+			p0.state.sow(Items.crop(&"turnip"), Vector2(0.5, 0.5))
+			p0.refresh()
+			var crow := Crow.new()
+			crow.plot = p0
+			field.add_child(crow)
+			crow.state = Crow.State.PECKING
+			crow.tame = true
+			crow.global_position = p0.to_world(Vector2(0.5, 0.5), 0.08)
+		"sandbox":
+			# Everything unlocked, with ripe crops, for testing the later stages quickly.
+			player.wallet.add(200)
+			for id: StringName in [&"sickle", &"flail", &"winnowing_basket", &"scarecrow"]:
+				player.inventory.add(id)
+			for id: StringName in [&"cabbage_seed", &"barley_seed", &"wheat_seed"]:
+				player.inventory.add(id, 12)
+			player.inventory.add(&"barley_sheaf", 3, 2)
+			player.set_bucket_water(1.0)
+			for i in field.plots.size():
+				var s := field.plots[i].state
+				if i >= 8:
+					continue   # leave a row to till and sow yourself
+				while not s.is_tilled():
+					s.till(1.0)
+				var c := Items.crop(StringName(crops[i % 4]))
+				for pt in [Vector2(0.33, 0.33), Vector2(0.67, 0.33), Vector2(0.33, 0.67), Vector2(0.67, 0.67)]:
+					s.sow(c, pt)
+				s.daily_update(0, false, field.rng)
+				s.growth = c.grow_days if i < 4 else c.grow_days * 0.5
+				s.moisture = 0.8
+				if i == 5:
+					s.weeds.append(Vector2(0.2, 0.5))
+					s.weeds.append(Vector2(0.8, 0.3))
+					s.caterpillars[4] = 2
+				if i == 6:
+					s.plants[4] = PlotState.Plant.BLIGHTED
 				field.plots[i].refresh()
 		"tools":
 			for id: StringName in [&"bucket", &"sickle", &"flail", &"winnowing_basket", &"scarecrow"]:

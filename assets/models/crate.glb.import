@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://2ncl3wrbxhnd"
-path="res://.godot/imported/town_stall_red.glb-3bfb29a778f411f648da5c4b09b71408.scn"
+uid="uid://tmp3dy1d5bgf"
+path="res://.godot/imported/crate.glb-777ae592992aa36d562d41ba67f2641a.scn"
 
 [deps]
 
-source_file="res://assets/models/town_stall_red.glb"
-dest_files=["res://.godot/imported/town_stall_red.glb-3bfb29a778f411f648da5c4b09b71408.scn"]
+source_file="res://assets/models/crate.glb"
+dest_files=["res://.godot/imported/crate.glb-777ae592992aa36d562d41ba67f2641a.scn"]
 
 [params]
 

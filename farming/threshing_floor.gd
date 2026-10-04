@@ -14,6 +14,8 @@ var _t := 0.0
 var _pennant: Node3D
 var _pile: Node3D
 var _pile_amount := 0.0
+var _shown_wind := 0.0
+var _flap_phase := 0.0
 
 
 func _ready() -> void:
@@ -53,9 +55,11 @@ func _process(delta: float) -> void:
 	var gusty := 0.5 + 0.5 * _noise.get_noise_1d(_t * 1.0)
 	var flutter := _noise.get_noise_1d(_t * 6.0 + 100.0)
 	wind = clampf(gusty * 1.25 - 0.15 + flutter * 0.08, 0.0, 1.0)
+	_shown_wind = lerpf(_shown_wind, wind, minf(1.0, delta * 3.0))
+	_flap_phase += delta * (5.0 + _shown_wind * 9.0)
 	var dir := wind_dir()
 	_pennant.rotation.y = atan2(-dir.z, dir.x)
-	_pennant.rotation.z = lerpf(-1.3, 0.0, wind) + sin(_t * (6.0 + wind * 12.0)) * 0.08 * (0.3 + wind)
+	_pennant.rotation.z = lerpf(-1.25, -0.05, _shown_wind) + sin(_flap_phase) * 0.06 * (0.3 + _shown_wind)
 
 
 func wind_dir() -> Vector3:

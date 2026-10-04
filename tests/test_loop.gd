@@ -60,6 +60,7 @@ func test_turnip_loop_till_sow_grow_harvest_sell() -> void:
 
 	# Harvest every plant by hand (TugGame).
 	player.select_slot(0)
+	var had := player.inventory.count(&"turnip")
 	var pulled := 0
 	for c in PlotState.CELLS:
 		if plot.state.plants[c] != PlotState.Plant.ALIVE:
@@ -78,7 +79,7 @@ func test_turnip_loop_till_sow_grow_harvest_sell() -> void:
 		pulled += 1
 	for c in PlotState.CELLS:
 		plot.state.pull_plant(c)   # any blighted plants (rain makes blight likelier)
-	var turnips := player.inventory.count(&"turnip")
+	var turnips := player.inventory.count(&"turnip") - had
 	eq(turnips, pulled, "one turnip per plant")
 	check(turnips >= 5, "good sowing gives most of a plot (%d)" % turnips)
 	eq(plot.state.has_crop(), false, "plot back to stubble")
@@ -94,15 +95,16 @@ func test_turnip_loop_till_sow_grow_harvest_sell() -> void:
 	_finish(w)
 
 
-func test_buy_bucket_and_draw_water() -> void:
+func test_buy_tool_and_draw_water() -> void:
 	var w := _world()
 	var player: Player = w.player
+	check(player.inventory.has(&"bucket"), "starts with a bucket")
 	player.wallet.add(20)
 	var stall: ToolStall = w.get_node("ToolStall")
 	for row: Dictionary in stall._rows(player):
-		if row.label.begins_with("Bucket"):
+		if row.label.begins_with("Winnowing"):
 			row.buttons[0].action.call()
-	check(player.inventory.has(&"bucket"), "bought a bucket")
+	check(player.inventory.has(&"winnowing_basket"), "bought a basket")
 	var well: Well = w.get_node("Well")
 	player.select_slot(player.hotbar.find(&"bucket"))
 	var g: Minigame = well.use(player)
@@ -213,12 +215,12 @@ func test_save_and_load_roundtrip() -> void:
 ## must reach the first turnip harvest without collapsing or starving.
 func test_first_week_is_survivable() -> void:
 	var n := Needs.new()
-	var gold := 12 - Items.item(&"bucket").buy_price
+	var gold := 12
 	var bread := 5
 	var bread_price := Items.item(&"bread").buy_price
 	var collapsed := [false]
 	n.collapsed.connect(func(_r: String) -> void: collapsed[0] = true)
-	var turnip_harvest_day := 7     # sown day 1, sprouts overnight, ~5 days' growth
+	var turnip_harvest_day := 5     # sown day 1, sprouts overnight, ~3 days' growth
 	var lowest := 100.0
 	for day in turnip_harvest_day:
 		for hour in 12:             # 06:00 to 18:00 awake

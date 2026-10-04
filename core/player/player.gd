@@ -15,6 +15,7 @@ const RUN_SPEED := 5.6
 const JUMP_VELOCITY := 4.2
 const MOUSE_SENSITIVITY := 0.0022
 const REACH := 3.2
+const STEP_HEIGHT := 0.32
 const EYE_HEIGHT := 1.6
 const HANDS := &"hands"
 
@@ -225,6 +226,8 @@ func _physics_process(delta: float) -> void:
 		velocity.y -= _gravity * delta
 	elif can_act() and minigame == null and Input.is_action_just_pressed("jump"):
 		velocity.y = JUMP_VELOCITY
+	if is_on_floor():
+		_try_step(delta)
 	move_and_slide()
 
 	var horizontal := Vector2(velocity.x, velocity.z).length()
@@ -238,6 +241,28 @@ func _physics_process(delta: float) -> void:
 	viewmodel.set_walk(horizontal / RUN_SPEED if is_on_floor() else 0.0)
 	if minigame != null:
 		minigame.update(delta)
+
+
+## If something low blocks the way, lift the player onto it (no jumping over thresholds).
+func _try_step(delta: float) -> void:
+	var horiz := Vector3(velocity.x, 0, velocity.z)
+	if horiz.length() < 0.1:
+		return
+	var ahead := horiz.normalized() * maxf(horiz.length() * delta, 0.08)
+	if not test_move(global_transform, ahead):
+		return
+	var up := Vector3.UP * STEP_HEIGHT
+	if test_move(global_transform, up):
+		return
+	var raised := global_transform.translated(up)
+	if test_move(raised, ahead):
+		return
+	var hit := KinematicCollision3D.new()
+	var over := raised.translated(ahead)
+	if test_move(over, -up, hit):
+		var rise := STEP_HEIGHT - hit.get_travel().length()
+		if rise > 0.01:
+			global_position = over.origin + hit.get_travel() + Vector3.UP * 0.01
 
 
 func _footstep_bank() -> String:

@@ -9,6 +9,7 @@ const SCARE_DISTANCE := 5.5
 const PECK_MINUTES := 12.0
 
 var plot: FarmPlot
+var tame := false   ## Dev screenshots: don't fly off when approached.
 var state := State.ARRIVING
 var _model: Node3D
 var _wing_l: Node3D
@@ -36,7 +37,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	var player: Player = get_tree().get_first_node_in_group("player")
-	if state != State.LEAVING and player and player.global_position.distance_to(global_position) < SCARE_DISTANCE and state == State.PECKING:
+	if not tame and state != State.LEAVING and player and player.global_position.distance_to(global_position) < SCARE_DISTANCE and state == State.PECKING:
 		flee()
 	match state:
 		State.ARRIVING:
@@ -72,12 +73,13 @@ func _fly_towards(p: Vector3, delta: float) -> void:
 	_flap(1.0)
 
 
+## Flapping in flight; folded against the body when perched (amount 0).
 func _flap(amount: float) -> void:
-	var a := sin(_t * 22.0) * 0.9 * amount
+	var a := sin(_t * 22.0) * 0.9 * amount if amount > 0.0 else 1.25
 	if _wing_l:
-		_wing_l.rotation.y = a
+		_wing_l.rotation.z = a
 	if _wing_r:
-		_wing_r.rotation.y = -a
+		_wing_r.rotation.z = -a
 
 
 func _on_minutes(m: float) -> void:

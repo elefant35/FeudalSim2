@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"wheat_seed"
 display_name = "Wheat seed"
-description = "Sow in autumn. Grows slowly through winter; ripens in early summer."
+description = "Sow in autumn. Grows slowly through winter; ripens in spring."
 kind = 1
 buy_price = 8
 buy_quantity = 6

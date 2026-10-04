@@ -68,7 +68,7 @@ func test_watered_crop_ripens_on_time() -> void:
 		p.water(1.0)
 		p.daily_update(0, false, r)
 		days += 1
-	eq(days, 5, "turnip days")
+	eq(days, 3, "turnip days")
 	check(p.quality() >= 2, "well-kept crop should be good or fine, got %d" % p.quality())
 
 
@@ -200,4 +200,4 @@ func test_wheat_overwinters_into_summer() -> void:
 		p.water(0.8)
 		p.daily_update(Clock.season_of(day), false, r)
 	check(p.has_crop(), "wheat survives winter")
-	eq(Clock.season_of(day), Clock.Season.SUMMER, "autumn-sown wheat ripens in early summer (day %d)" % day)
+	eq(Clock.season_of(day), Clock.Season.SPRING, "autumn-sown wheat ripens in spring (day %d)" % day)

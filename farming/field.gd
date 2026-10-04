@@ -7,8 +7,9 @@ const COLS := 4
 const ROWS := 3
 const PITCH := 3.0
 const SCARECROW_RADIUS := 8.0
-const CROW_CHECK_MINUTES := 20.0
-const CROW_CHANCE := 0.3
+const CROW_CHECK_MINUTES := 60.0
+const CROW_CHANCE := 0.12
+const MAX_CROWS := 2
 
 var plots: Array[FarmPlot] = []
 var scarecrows: Array[Vector3] = []
@@ -59,8 +60,15 @@ func _on_minutes(minutes: float) -> void:
 	var h := Clock.hour()
 	if h < 6.0 or h > 19.0 or Clock.raining:
 		return
+	var crows := 0
+	for c in get_children():
+		if c is Crow:
+			crows += 1
 	for p in plots:
+		if crows >= MAX_CROWS:
+			return
 		if p.state.is_sown_not_sprouted() and not _protected(p) and not _has_crow(p) and rng.randf() < CROW_CHANCE:
+			crows += 1
 			var crow := Crow.new()
 			crow.plot = p
 			add_child(crow)

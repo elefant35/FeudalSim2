@@ -21,8 +21,8 @@ Tests (headless): `/Applications/Godot_mono.app/Contents/MacOS/Godot --headless 
 
 ## How to play
 
-It's the first morning of spring. You have a cottage, a fenced field of twelve plots, a hoe, a little turnip
-seed, five loaves of bread and 12 gold. Everything else you earn.
+It's the first morning of spring. You have a cottage, a fenced field of twelve plots, a hoe, a bucket, a little
+turnip seed, a small store of food (five loaves, four turnips) and 12 gold. Everything else you earn.
 
 **Your first days**
 1. Walk to the field (east of the house). With the **hoe** in hand, look at a plot and click. A marker
@@ -30,8 +30,8 @@ seed, five loaves of bread and 12 gold. Everything else you earn.
 2. Select your **turnip seed** and click to throw handfuls onto the tilled plot. The little 3×3 map shows
    your cover. Aim for every square green; bare squares grow nothing and orange ones are overcrowded.
    About four well-placed handfuls cover a plot.
-3. Seed needs water. Walk south down the lane to the **Tools & Seed** stall and buy a **bucket**. At the
-   **well**, hold the left button and circle the mouse to wind the bucket up. Then hold the left button over
+3. Seed needs water. Take your **bucket** to the **well**, hold the left button and circle the mouse to wind
+   it up. Then hold the left button over
    a plot to pour, and fill the soil to the marked band. A full bucket waters about three plots. Rain waters
    everything for you.
 4. Each day, check your plots. Look at a plot to see its state. With empty **hands**: hold to pull weeds
@@ -50,9 +50,10 @@ from your pack (**Tab**). Turnips are edible raw, and bread is sold at the stall
 after 18:00 to end the day; **the game saves whenever you sleep** (and from the Esc menu). If you work
 yourself to exhaustion you'll collapse and wake at home the next morning.
 
-**Seasons.** Each season lasts 6 days. Turnips: spring, summer or autumn, about 5 days, survive frost.
-Cabbage: spring or summer, about 8 days. Barley: spring only, about 8 days, killed by winter. Wheat: sow in
-autumn; it grows slowly through winter and ripens in early summer. Plan your plots around the year.
+**Seasons.** Each season lasts 6 days. Turnips: spring, summer or autumn, about 3 days, survive frost.
+Cabbage: spring or summer, about 5 days. Barley: spring only, about 5 days, killed by winter. Wheat: sow in
+autumn; it grows slowly through winter and ripens in spring. Plan your plots around the year. More tools
+and seed are sold at the **Tools & Seed** stall down the lane.
 
 **Time speed.** **T** (or the button under the clock, or the Esc menu) cycles 1× / 2× / 4×. It speeds up
 the *world*: the clock, crop growth, soil drying, hunger and energy. It does **not** speed up your walking
@@ -70,3 +71,15 @@ or the mini-games. At 1× a day lasts about 15 minutes.
 | 1–9, mouse wheel | Choose tool |
 | T | Time speed |
 | Esc | Menu (save, new game, quit) |
+
+## Testing shortcut: the sandbox
+
+To try the later stages without waiting for crops, run:
+
+```bash
+tools/sandbox.sh
+```
+
+You start with 200 gold, every tool, seed of each crop, and three sheaves of barley. Four plots are
+ripe (one of each crop), four are half-grown with weeds, caterpillars and blight to deal with, and four
+are left for you to till. The sandbox never reads or writes your real save.

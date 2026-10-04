@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"turnip_seed"
 display_name = "Turnip seed"
-description = "Sow in spring, summer or autumn. Ready in about 5 days. Hardy. Edible raw."
+description = "Sow in spring, summer or autumn. Ready in about 3 days. Hardy. Edible raw."
 kind = 1
 buy_price = 3
 buy_quantity = 6

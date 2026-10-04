@@ -32,10 +32,10 @@ field of plots, a threshing floor, a tool stall (buy seeds, tools, bread) and a 
 
 | Crop | Sow in | Grows | Notes |
 |---|---|---|---|
-| Turnip | spring, summer, autumn | ~5 days | hardy, cheap, eaten raw |
-| Cabbage | spring, summer | ~8 days | caterpillars |
-| Barley | spring | ~8 days | killed by winter, threshed |
-| Wheat | autumn | ~12 days, overwinters | threshed, most valuable |
+| Turnip | spring, summer, autumn | ~3 days | hardy, cheap, eaten raw |
+| Cabbage | spring, summer | ~5 days | caterpillars |
+| Barley | spring | ~5 days | killed by winter, threshed |
+| Wheat | autumn | ~8 days' growth, overwinters, ripe in spring | threshed, most valuable |
 
 **Work and mini-games:**
 - **Till:** timed hoe strikes break the sod.
@@ -87,6 +87,31 @@ field of plots, a threshing floor, a tool stall (buy seeds, tools, bread) and a 
   (till → sow → grow → harvest → sell), the well, threshing and winnowing, sleep, needs, first-week
   survival, and save/load.
 - **Dev tools:** `tools/shot.sh` takes in-game screenshots with dev flags (time, position, scenario, click).
+
+## Playtest 1 feedback (fixed)
+
+- **Props and setting:**
+  - modern-looking props (orange barrel, street lamp, cardboard boxes) replaced with our own barrel,
+    crate, lantern post and farm cart
+  - unused Kenney models removed
+  - the stall's display hoe was moved out of the canopy
+- **Models and animation:**
+  - crow wings re-attached; they fold when perched
+  - the hoe is held properly: hands sit on the tool's grips (viewmodel rebuilt around grip points)
+  - bread no longer shows as a magenta box
+- **World glitches:**
+  - fence collisions now match the fence models
+  - the plot surface no longer flickers against its rim
+  - the threshing-floor flag no longer flickers
+  - no lip at the door; you also step over small ledges
+  - rain stops at the roof and sounds muffled indoors
+  - a real fireplace with flickering fire; the chimney is outside
+  - sign text fits the board
+- **Balance:**
+  - crows are much rarer (max two at once)
+  - crops grow faster (turnip 3 days, cabbage and barley 5, wheat 8)
+  - you start with a bucket and a few turnips
+- **Testing:** `tools/sandbox.sh` lets you test the later stages quickly.
 
 ## Not verified yet (needs Tyler's hands)
 

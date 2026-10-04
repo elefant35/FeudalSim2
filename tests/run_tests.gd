@@ -3,6 +3,7 @@ extends SceneTree
 ## Run: Godot --headless --path . -s res://tests/run_tests.gd
 
 func _initialize() -> void:
+	OS.set_environment("FEUDALSIM_NOSAVE", "1")   # never touch the player's real save
 	# Let autoloads finish _ready before testing.
 	process_frame.connect(_run, CONNECT_ONE_SHOT)
 

@@ -12,6 +12,7 @@ extends Node
 ## --hold=slot     select a hotbar slot
 ## --click         left-click whatever is under the crosshair (starts its minigame)
 ## --interact      press E on whatever is under the crosshair
+## --eat           eat something just before the screenshot
 ## --newgame       after a second, run New Game once (checks a clean scene reload)
 
 var args: Dictionary = {}
@@ -62,6 +63,10 @@ func apply(world: Node3D, player: Player) -> void:
 		player._update_target()
 		if player.target and player.target.has_method("interact"):
 			player.target.interact(player)
+	if args.has("eat"):
+		get_tree().create_timer(float(args.get("wait", "2.5")) - 0.4).timeout.connect(func() -> void:
+			player.needs.hunger = 50.0
+			player.eat_something())
 	if args.has("click"):
 		await get_tree().create_timer(0.6).timeout
 		player._update_target()
@@ -78,5 +83,6 @@ func apply(world: Node3D, player: Player) -> void:
 		get_tree().quit()
 
 
+## Dev runs and tests never read or write the player's real save.
 static func no_save() -> bool:
-	return parse().has("nosave")
+	return parse().has("nosave") or OS.get_environment("FEUDALSIM_NOSAVE") == "1"
