@@ -1,0 +1,207 @@
+extends TestCase
+## End-to-end: loads the real world scene and plays through the farming loop by driving the
+## same objects the player uses (minigames are fed button presses directly).
+
+
+func _world() -> Node3D:
+	var w: Node3D = load("res://world/world.tscn").instantiate()
+	tree.root.add_child(w)
+	tree.current_scene = w
+	return w
+
+
+func _finish(w: Node3D) -> void:
+	tree.root.remove_child(w)
+	w.free()
+
+
+## Presses a TillGame's button only when its marker is in the green.
+func _till(g: TillGame) -> void:
+	var guard := 0
+	while not g.done and guard < 2000:
+		g.update(0.05)
+		if g._value() >= TillGame.GOOD.x + 0.02 and g._value() <= TillGame.GOOD.y - 0.02 and g._cooldown <= 0.0:
+			g.press()
+		guard += 1
+
+
+func test_turnip_loop_till_sow_grow_harvest_sell() -> void:
+	var w := _world()
+	var player: Player = w.player
+	var field: Field = tree.get_first_node_in_group("field")
+	var plot := field.plots[0]
+	eq(player.wallet.gold, w.START_GOLD, "starting gold")
+	check(player.inventory.has(&"hoe"), "starts with a hoe")
+
+	# Till.
+	player.select_slot(player.hotbar.find(&"hoe"))
+	var g: Minigame = plot.use(player)
+	check(g is TillGame, "hoe on sod starts tilling")
+	player.start_minigame(g)
+	_till(g)
+	check(plot.state.is_tilled(), "plot tilled")
+	eq(player.minigame, null, "minigame ended")
+
+	# Sow four handfuls at the quarter points.
+	player.select_slot(player.hotbar.find(&"turnip_seed"))
+	var crop := Items.crop(&"turnip")
+	for pt in [Vector2(0.33, 0.33), Vector2(0.67, 0.33), Vector2(0.33, 0.67), Vector2(0.67, 0.67)]:
+		check(player.inventory.remove(&"turnip_seed", 1))
+		plot.state.sow(crop, pt)
+	plot.refresh()
+
+	# Five days of watering (as if by bucket) through midnight rollovers.
+	for d in 7:
+		plot.state.water(0.8)
+		Clock.skip_to_hour(6.0)
+		if plot.state.is_ripe():
+			break
+	check(plot.state.is_ripe(), "turnips ripen within a week (growth %.1f)" % plot.state.growth)
+
+	# Harvest every plant by hand (TugGame).
+	player.select_slot(0)
+	var pulled := 0
+	for c in PlotState.CELLS:
+		if plot.state.plants[c] != PlotState.Plant.ALIVE:
+			continue
+		var tg := TugGame.harvest(plot, c)
+		player.start_minigame(tg)
+		tg.press()
+		var guard := 0
+		while not tg.done and guard < 400:
+			tg.update(0.05)
+			if tg._strain > 0.7:
+				tg.release()
+			elif not tg._holding:
+				tg.press()
+			guard += 1
+		pulled += 1
+	var turnips := player.inventory.count(&"turnip")
+	eq(turnips, pulled, "one turnip per plant")
+	check(turnips >= 6, "good sowing gives most of a plot (%d)" % turnips)
+	eq(plot.state.has_crop(), false, "plot back to stubble")
+
+	# Sell them all.
+	var buyer: ProduceBuyer = w.get_node("ProduceBuyer")
+	var before := player.wallet.gold
+	for row: Dictionary in buyer._rows(player):
+		if row.label.contains("urnip"):
+			row.buttons[1].action.call()
+	check(player.wallet.gold > before, "selling earns gold")
+	eq(player.inventory.count(&"turnip"), 0, "all sold")
+	_finish(w)
+
+
+func test_buy_bucket_and_draw_water() -> void:
+	var w := _world()
+	var player: Player = w.player
+	player.wallet.add(20)
+	var stall: ToolStall = w.get_node("ToolStall")
+	for row: Dictionary in stall._rows(player):
+		if row.label.begins_with("Bucket"):
+			row.buttons[0].action.call()
+	check(player.inventory.has(&"bucket"), "bought a bucket")
+	var well: Well = w.get_node("Well")
+	player.select_slot(player.hotbar.find(&"bucket"))
+	var g: Minigame = well.use(player)
+	check(g is WellGame, "well starts winding")
+	player.start_minigame(g)
+	g.press()
+	# Circle the mouse.
+	var a := 0.0
+	for k in 400:
+		if g.done:
+			break
+		var d := Vector2(cos(a), sin(a)) * 8.0
+		g.mouse_motion(d)
+		g.update(0.016)
+		a += 0.25
+	eq(player.bucket_water(), 1.0, "bucket filled")
+	_finish(w)
+
+
+func test_grain_chain_thresh_winnow_sell() -> void:
+	var w := _world()
+	var player: Player = w.player
+	player.inventory.add(&"flail")
+	player.inventory.add(&"winnowing_basket")
+	player.inventory.add(&"barley_sheaf", 2, 2)
+	var tf: ThreshingFloor = w.get_node("ThreshingFloor")
+	tf.interact(player)
+	eq(tf.sheaves.size(), 2, "sheaves laid")
+	player.select_slot(player.hotbar.find(&"flail"))
+	var g: ThreshGame = tf.use(player)
+	player.start_minigame(g)
+	var guard := 0
+	while not g.done and guard < 3000:
+		g.update(0.02)
+		if g._phase() > 0.97 or g._phase() < 0.03:
+			g.press()
+		guard += 1
+	eq(player.inventory.count(&"barley_chaff", 2), 2, "threshed into unwinnowed barley")
+
+	player.select_slot(player.hotbar.find(&"winnowing_basket"))
+	var wg: WinnowGame = tf.use(player)
+	player.start_minigame(wg)
+	guard = 0
+	while not wg.done and guard < 3000:
+		tf.wind = 0.9 if (guard / 40) % 2 == 0 else 0.1
+		wg.update(0.05)
+		if not wg._holding:
+			wg.press()
+		elif wg._lift >= 1.0 and tf.wind > 0.6:
+			wg.release()
+		guard += 1
+	eq(player.inventory.count(&"barley", 2), 2, "two measures of clean good barley")
+	eq(player.inventory.count(&"barley_chaff"), 0, "no chaff left")
+	check(Items.sell_value(&"barley", 2) > Items.sell_value(&"barley", 0), "quality pays")
+	_finish(w)
+
+
+func test_sleep_advances_day_and_restores_energy() -> void:
+	var w := _world()
+	var player: Player = w.player
+	player.needs.energy = 20.0
+	var day := Clock.day()
+	Clock.total_minutes = day * Clock.MINUTES_PER_DAY + 21 * 60
+	var hours := Clock.skip_to_hour(6.0)
+	player.needs.sleep(hours)
+	eq(Clock.day(), day + 1, "next day")
+	check(player.needs.energy > 95.0, "rested")
+	check(player.needs.hunger < 85.0, "woke hungrier")
+	_finish(w)
+
+
+func test_needs_drain_and_collapse() -> void:
+	var n := Needs.new()
+	var collapsed := [false]
+	n.collapsed.connect(func(_r: String) -> void: collapsed[0] = true)
+	n.pass_hours(10.0)
+	check(n.hunger < 85.0 and n.energy < 100.0, "needs drain")
+	check(n.speed_factor() == 1.0, "not slowed yet")
+	n.pass_hours(9.5)
+	check(n.speed_factor() < 1.0, "tired slows you")
+	n.pass_hours(2.0)
+	check(collapsed[0], "collapse when energy runs out")
+	n.free()
+
+
+func test_save_and_load_roundtrip() -> void:
+	var w := _world()
+	var player: Player = w.player
+	var field: Field = tree.get_first_node_in_group("field")
+	field.plots[3].state.till(1.0)
+	player.wallet.add(17)
+	field.place_scarecrow(field.global_position + Vector3(0, 0, 5.4))
+	var data := {"clock": Clock.to_dict(), "player": player.to_dict(), "field": field.to_dict()}
+	var json: Dictionary = JSON.parse_string(JSON.stringify(data))
+	var gold := player.wallet.gold
+	_finish(w)
+	var w2 := _world()
+	var f2: Field = tree.get_first_node_in_group("field")
+	w2.player.from_dict(json.player)
+	f2.from_dict(json.field)
+	eq(w2.player.wallet.gold, gold, "gold restored")
+	eq(f2.plots[3].state.till_progress, 1.0, "plot restored")
+	eq(f2.scarecrows.size(), 1, "scarecrow restored")
+	_finish(w2)

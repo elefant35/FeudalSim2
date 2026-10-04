@@ -1,0 +1,11 @@
+{
+  "name": "FeudalSim2",
+  "engine": "generic",
+  "build": { "cmd": "${GODOT} --headless --path . --import" },
+  "launch": { "cmd": "${GODOT}", "args": ["--path", "."] },
+  "log": { "stdout": true },
+  "ready": "FeudalSim2 world ready",
+  "window": "FeudalSim2",
+  "sourceRoots": ["."],
+  "vars": { "GODOT": "/Applications/Godot_mono.app/Contents/MacOS/Godot" }
+}

@@ -178,3 +178,26 @@ func test_save_roundtrip() -> void:
 	eq(q.plants, p.plants)
 	eq(q.weeds.size(), p.weeds.size())
 	eq(q.moisture, p.moisture)
+
+
+func test_prices_and_quality() -> void:
+	eq(Items.sell_value(&"turnip", 1), 2)
+	check(Items.sell_value(&"wheat", 3) > Items.sell_value(&"wheat", 1))
+	eq(Items.sell_value(&"barley_sheaf", 1), 0, "buyer won't take sheaves")
+	eq(Items.sell_value(&"hoe", -1), 0, "buyer won't take tools")
+
+
+func test_wheat_overwinters_into_summer() -> void:
+	var wheat: CropData = load("res://farming/data/crops/wheat.tres")
+	var p := _tilled()
+	_sow_evenly(p, wheat)
+	var r := rng(2)
+	var day := 12   # first day of autumn
+	p.daily_update(Clock.season_of(day), false, r)
+	while not p.is_ripe() and day < 60:
+		day += 1
+		p.weeds.clear()
+		p.water(0.8)
+		p.daily_update(Clock.season_of(day), false, r)
+	check(p.has_crop(), "wheat survives winter")
+	eq(Clock.season_of(day), Clock.Season.SUMMER, "autumn-sown wheat ripens in early summer (day %d)" % day)

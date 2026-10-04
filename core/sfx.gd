@@ -3,6 +3,7 @@ extends Node
 ## res://assets/sounds; a random variant plays each time.
 
 const DIR := "res://assets/sounds"
+const LOOPING: Array[String] = ["pour", "rain_loop", "ambience_day"]
 
 var _banks: Dictionary = {}   # name -> Array[AudioStream]
 
@@ -24,6 +25,8 @@ func _ready() -> void:
 			bank = bank.trim_suffix("_" + tail)
 		if not _banks.has(bank):
 			_banks[bank] = []
+		if bank in LOOPING and "loop" in stream:
+			stream.set("loop", true)
 		if not (stream in _banks[bank]):
 			_banks[bank].append(stream)
 

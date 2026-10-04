@@ -1,0 +1,250 @@
+{
+ "tree_oak": [
+  "kenney_nature-kit/Models/GLTF format/tree_oak.glb",
+  5
+ ],
+ "tree_default": [
+  "kenney_nature-kit/Models/GLTF format/tree_default.glb",
+  4
+ ],
+ "tree_fat": [
+  "kenney_nature-kit/Models/GLTF format/tree_fat.glb",
+  5
+ ],
+ "tree_detailed": [
+  "kenney_nature-kit/Models/GLTF format/tree_detailed.glb",
+  5
+ ],
+ "tree_pineRoundA": [
+  "kenney_nature-kit/Models/GLTF format/tree_pineRoundA.glb",
+  5
+ ],
+ "tree_oak_fall": [
+  "kenney_nature-kit/Models/GLTF format/tree_oak_fall.glb",
+  5
+ ],
+ "tree_default_fall": [
+  "kenney_nature-kit/Models/GLTF format/tree_default_fall.glb",
+  4
+ ],
+ "tree_fat_fall": [
+  "kenney_nature-kit/Models/GLTF format/tree_fat_fall.glb",
+  5
+ ],
+ "rock_largeA": [
+  "kenney_nature-kit/Models/GLTF format/rock_largeA.glb",
+  3
+ ],
+ "rock_largeB": [
+  "kenney_nature-kit/Models/GLTF format/rock_largeB.glb",
+  3
+ ],
+ "rock_smallA": [
+  "kenney_nature-kit/Models/GLTF format/rock_smallA.glb",
+  2
+ ],
+ "rock_smallB": [
+  "kenney_nature-kit/Models/GLTF format/rock_smallB.glb",
+  2
+ ],
+ "rock_smallC": [
+  "kenney_nature-kit/Models/GLTF format/rock_smallC.glb",
+  2
+ ],
+ "plant_bush": [
+  "kenney_nature-kit/Models/GLTF format/plant_bush.glb",
+  3
+ ],
+ "plant_bushLarge": [
+  "kenney_nature-kit/Models/GLTF format/plant_bushLarge.glb",
+  3
+ ],
+ "grass": [
+  "kenney_nature-kit/Models/GLTF format/grass.glb",
+  1.6
+ ],
+ "grass_large": [
+  "kenney_nature-kit/Models/GLTF format/grass_large.glb",
+  1.6
+ ],
+ "grass_leafs": [
+  "kenney_nature-kit/Models/GLTF format/grass_leafs.glb",
+  2
+ ],
+ "flower_yellowA": [
+  "kenney_nature-kit/Models/GLTF format/flower_yellowA.glb",
+  1.5
+ ],
+ "flower_redA": [
+  "kenney_nature-kit/Models/GLTF format/flower_redA.glb",
+  1.5
+ ],
+ "flower_purpleA": [
+  "kenney_nature-kit/Models/GLTF format/flower_purpleA.glb",
+  1.5
+ ],
+ "fence_simple": [
+  "kenney_nature-kit/Models/GLTF format/fence_simple.glb",
+  3
+ ],
+ "fence_gate": [
+  "kenney_nature-kit/Models/GLTF format/fence_gate.glb",
+  3
+ ],
+ "log_stack": [
+  "kenney_nature-kit/Models/GLTF format/log_stack.glb",
+  3
+ ],
+ "stump_round": [
+  "kenney_nature-kit/Models/GLTF format/stump_round.glb",
+  3
+ ],
+ "crop_turnip": [
+  "kenney_nature-kit/Models/GLTF format/crop_turnip.glb",
+  0.6
+ ],
+ "crops_leafsStageA": [
+  "kenney_nature-kit/Models/GLTF format/crops_leafsStageA.glb",
+  0.8
+ ],
+ "crops_leafsStageB": [
+  "kenney_nature-kit/Models/GLTF format/crops_leafsStageB.glb",
+  0.8
+ ],
+ "crops_wheatStageA": [
+  "kenney_nature-kit/Models/GLTF format/crops_wheatStageA.glb",
+  1.4
+ ],
+ "crops_wheatStageB": [
+  "kenney_nature-kit/Models/GLTF format/crops_wheatStageB.glb",
+  1.4
+ ],
+ "mushroom_red": [
+  "kenney_nature-kit/Models/GLTF format/mushroom_red.glb",
+  1
+ ],
+ "food_cabbage": [
+  "kenney_food-kit/Models/GLB format/cabbage.glb",
+  0.55
+ ],
+ "food_bread": [
+  "kenney_food-kit/Models/GLB format/bread.glb",
+  0.4
+ ],
+ "food_loaf": [
+  "kenney_food-kit/Models/GLB format/loaf.glb",
+  0.4
+ ],
+ "food_beet": [
+  "kenney_food-kit/Models/GLB format/beet.glb",
+  0.6
+ ],
+ "food_radish": [
+  "kenney_food-kit/Models/GLB format/radish.glb",
+  0.5
+ ],
+ "food_bag": [
+  "kenney_food-kit/Models/GLB format/bag.glb",
+  1.0
+ ],
+ "food_barrel": [
+  "kenney_food-kit/Models/GLB format/barrel.glb",
+  1.3
+ ],
+ "town_stall": [
+  "kenney_fantasy-town-kit_2.0/Models/GLB format/stall.glb",
+  2.6
+ ],
+ "town_stall_red": [
+  "kenney_fantasy-town-kit_2.0/Models/GLB format/stall-red.glb",
+  2.6
+ ],
+ "town_stall_green": [
+  "kenney_fantasy-town-kit_2.0/Models/GLB format/stall-green.glb",
+  2.6
+ ],
+ "town_stall_bench": [
+  "kenney_fantasy-town-kit_2.0/Models/GLB format/stall-bench.glb",
+  2.6
+ ],
+ "town_cart": [
+  "kenney_fantasy-town-kit_2.0/Models/GLB format/cart.glb",
+  2.4
+ ],
+ "town_cart_high": [
+  "kenney_fantasy-town-kit_2.0/Models/GLB format/cart-high.glb",
+  2.4
+ ],
+ "town_lantern": [
+  "kenney_fantasy-town-kit_2.0/Models/GLB format/lantern.glb",
+  1.4
+ ],
+ "town_banner_red": [
+  "kenney_fantasy-town-kit_2.0/Models/GLB format/banner-red.glb",
+  2.4
+ ],
+ "town_fence": [
+  "kenney_fantasy-town-kit_2.0/Models/GLB format/fence.glb",
+  2.6
+ ],
+ "town_fence_gate": [
+  "kenney_fantasy-town-kit_2.0/Models/GLB format/fence-gate.glb",
+  2.6
+ ],
+ "town_wheel": [
+  "kenney_fantasy-town-kit_2.0/Models/GLB format/wheel.glb",
+  2.4
+ ],
+ "town_wall_wood": [
+  "kenney_fantasy-town-kit_2.0/Models/GLB format/wall-wood.glb",
+  2.6
+ ],
+ "town_roof_gable": [
+  "kenney_fantasy-town-kit_2.0/Models/GLB format/roof-gable.glb",
+  2.6
+ ],
+ "town_planks": [
+  "kenney_fantasy-town-kit_2.0/Models/GLB format/planks.glb",
+  2.6
+ ],
+ "surv_tool_hoe": [
+  "kenney_survival-kit/Models/GLB format/tool-hoe.glb",
+  5.8
+ ],
+ "surv_bucket": [
+  "kenney_survival-kit/Models/GLB format/bucket.glb",
+  1.6
+ ],
+ "surv_barrel": [
+  "kenney_survival-kit/Models/GLB format/barrel.glb",
+  2.6
+ ],
+ "surv_box": [
+  "kenney_survival-kit/Models/GLB format/box.glb",
+  2.4
+ ],
+ "surv_box_large": [
+  "kenney_survival-kit/Models/GLB format/box-large.glb",
+  2.4
+ ],
+ "surv_chest": [
+  "kenney_survival-kit/Models/GLB format/chest.glb",
+  2.4
+ ],
+ "surv_signpost": [
+  "kenney_survival-kit/Models/GLB format/signpost.glb",
+  4
+ ],
+ "surv_workbench": [
+  "kenney_survival-kit/Models/GLB format/workbench.glb",
+  3
+ ],
+ "surv_tree_log": [
+  "kenney_survival-kit/Models/GLB format/tree-log.glb",
+  3
+ ],
+ "surv_resource_wood": [
+  "kenney_survival-kit/Models/GLB format/resource-wood.glb",
+  3
+ ]
+}
