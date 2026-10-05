@@ -24,30 +24,36 @@ Tests (headless): `/Applications/Godot_mono.app/Contents/MacOS/Godot --headless 
 Not sure what to do? The **Next:** line under the clock always names the next step, and **G** opens the
 field guide.
 
-It's the first morning of spring. You have a cottage, a fenced field of twelve plots, a hoe, a bucket, a little
+It's the first morning of spring. You have a cottage, a fenced garden with four beds, a handcart, a hoe, a bucket, a little
 turnip seed, a small store of food (five loaves, four turnips) and 12 gold. Everything else you earn.
 
 **Your first days**
 1. Walk to the garden (east of the house); four beds are already dug from last year. With the **hoe** in
    hand, look at a bed and click. To make more plots anywhere, aim the hoe at open grass: a green outline
-   shows where the new plot will go (red means it won't fit). A marker swings along a bar; click when it's in the green. Fresh sod takes a few good strikes.
+   shows where the new plot will go (red means it won't fit). A marker swings along a bar; click when it's
+   in the green. Fresh sod takes a few good strikes.
 2. Select your **turnip seed** and click to throw handfuls onto the tilled plot. The little 3×3 map shows
    your cover. Aim for every square green; bare squares grow nothing and orange ones are overcrowded.
    About four well-placed handfuls cover a plot.
 3. Seed needs water. Take your **bucket** to the **well**, hold the left button and circle the mouse to wind
-   it up. Then hold the left button over
-   a plot to pour, and fill the soil to the marked band. A full bucket waters about three plots. Rain waters
+   it up. Then hold the left button over a plot to pour, and fill the soil to the marked band. A full bucket waters about three plots. Rain waters
    everything for you.
 4. Each day, check your plots. Look at a plot to see its state. With empty **hands**: hold to pull weeds
    (ease off before the strain hits red, or the root snaps and regrows), click caterpillars off cabbages,
-   and pull blighted (brown, spotted) plants before the blight spreads. Pulling them is all it takes. Crows eat fresh seed; walk up to scare them, or buy a
-   **scarecrow** and set it up beside the plots.
+   and pull blighted (brown, spotted) plants before the blight spreads. Pulling them is all it takes.
+   Crows eat fresh seed; walk up to scare them, or buy a **scarecrow** and set it up beside the plots.
 5. When a crop is ripe, pull root crops by hand. Grain is reaped with the **sickle**: hold and sweep the
    mouse across it in steady strokes. Then click the cut stalks to bind them into sheaves.
-6. Take sheaves to the **threshing floor** (north-west of the house). Press E to lay them out, then use the
-   **flail**, clicking as the ring closes on the circle. Then **winnow** with the basket: hold to lift and
-   release to toss when the pennant shows a gust.
-7. Sell produce and clean grain at the **Produce Bought** cart. Better quality earns more.
+6. **The harvest is physical.** What you pick goes into your arms (8 turnips, 4 cabbages, 3 sheaves or
+   4 sacks of grain). **E** sets it down: in the **handcart**, on the threshing floor (sheaves), or on the
+   grass as a pile or stook. E on a pile or the cart picks an armful back up. Your pack holds 6 produce to
+   eat. While your arms are full, you can't use tools.
+7. Carry sheaves to the **threshing floor** (north-west of the house) and press E to lay them out. Thresh
+   with the **flail**, clicking as the ring closes; the grain stays on the floor. Then **winnow** with the
+   basket: hold to lift and release to toss when the pennant shows a gust. Clean grain goes into sacks
+   beside the floor; pick them up with E.
+8. Load the cart, grab its handles (**E** at the front) and pull it down the lane. Park it beside the
+   **Produce Bought** cart and sell straight from it. Better quality earns more.
 
 **What hurts crops.** Look at a plot to see its health and what hurt it overnight. Quality is mostly
 health (60%), plus how evenly you sowed (25%) and how well you tilled (15%); better quality sells for more.
@@ -80,7 +86,7 @@ or the mini-games. At 1× a day lasts about 15 minutes.
 | Shift / Space | Run / jump |
 | Left click (hold) | Use what's in your hand |
 | Right click | Stop the current task |
-| E | Interact (bed, stall, cart, threshing floor) |
+| E | Interact: bed, stall, piles, cart, threshing floor. Sets down what you're carrying; takes or lets go of the handcart |
 | F | Eat |
 | Tab | Pack: your items as icons. Drag tools and seed onto the hotbar to choose what's at hand |
 | G | Field guide: what to sow this season, and every crop's steps from field to market |
@@ -96,6 +102,7 @@ To try the later stages without waiting for crops, run:
 tools/sandbox.sh
 ```
 
-You start with 200 gold, every tool, seed of each crop, and three sheaves of barley. Four plots are
+You start with 200 gold, every tool and seed of each crop. Turnips and cabbages are already loaded in the
+handcart, and a stook of barley sheaves stands by the threshing floor. Four plots are
 ripe (one of each crop), four are half-grown with weeds, caterpillars and blight to deal with, and four
 are left for you to till. The sandbox never reads or writes your real save.
