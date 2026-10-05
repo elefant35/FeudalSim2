@@ -269,6 +269,29 @@ func dev_scenario(scenario: String) -> void:
 				if c.gets_caterpillars:
 					s.caterpillars[2] = 2
 				field.plots[i].refresh()
+		"villagers":
+			# Rig check: a row of villagers each playing one animation, the hoe in a right hand.
+			var anims := ["idle", "walk", "hoe", "carry", "pull"]
+			for i in anims.size():
+				var v := Models.make(&"villager")
+				add_child(v)
+				v.global_position = Vector3(-6.0 + i * 1.6, 0, -8.0)
+				v.rotation.y = PI * 0.15 if i % 2 == 0 else -PI * 0.15
+				var ap: AnimationPlayer = v.find_children("*", "AnimationPlayer", true, false)[0]
+				print("DEV villager anims: ", ap.get_animation_list())
+				ap.get_animation(anims[i]).loop_mode = Animation.LOOP_LINEAR
+				ap.play(anims[i])
+				ap.seek(0.3 * i, true)
+				if anims[i] == "hoe":   # hold the top of the swing, to check the arms go overhead
+					ap.seek(10.0 / 24.0, true)
+					ap.pause()
+				if anims[i] == "hoe":
+					var sk: Skeleton3D = v.find_children("*", "Skeleton3D", true, false)[0]
+					var att := BoneAttachment3D.new()
+					att.bone_name = "hand.R"
+					sk.add_child(att)
+					var hoe := Models.make(&"hoe")
+					att.add_child(hoe)
 		"crow":
 			# A crow already pecking at fresh seed on the nearest plot.
 			var p0 := field.plots[0]

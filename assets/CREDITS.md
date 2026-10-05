@@ -27,6 +27,7 @@ The Kenney Nature Kit colours are converted from sRGB and re-tinted by `tools/bl
 | What | Made by |
 |---|---|
 | First-person arms, hoe, bucket, sickle, flail, winnowing basket, seed pouch, scarecrow, cottage (with interior and fireplace), barrel, crate, lantern post, farm cart, well (with working crank), threshing floor, signboard, sheaves, grain piles and sacks, turnip/cabbage/barley/wheat at four growth stages plus blighted and dead versions, harvested turnip and cabbage, weed, caterpillar, crow | `tools/blender/make_models.py` (Blender, scripted) |
+| The villager: rigged low-poly character and all its animations (idle, walk, carry, pull, hoe, ...) | `tools/blender/make_villager.py` (Blender, scripted rig and keyframes) |
 | Sowing, grain patter, sickle swish, basket toss, eating, wing flaps, countryside ambience | `tools/sound/synth.py` (numpy) |
 
 ## Rebuilding
