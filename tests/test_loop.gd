@@ -498,6 +498,8 @@ func test_neighbour_farms_a_year() -> void:
 			Clock.advance(30.0)
 			lowest_hunger = minf(lowest_hunger, wynn.needs.hunger)
 		Clock.skip_to_hour(6.0)
+	var wcart: HandCart = w.get_node("WynnCart")
+	eq(wcart.goods.count(&"barley_sheaf") + wcart.goods.count(&"wheat_sheaf"), 0, "sheaves never end up stuck in the cart")
 	print("WYNN year: ", counts, " gold %d -> %d, lowest hunger %.0f, labels seen: " % [start_gold, wynn.wallet.gold, lowest_hunger], _labels.keys())
 	check(counts.sown >= 4, "sowed several beds over the year (%d)" % counts.sown)
 	check(counts.harvest_tasks >= 6, "harvested (%d harvest jobs)" % counts.harvest_tasks)
@@ -553,4 +555,25 @@ func test_you_cant_sell_the_neighbours_cart() -> void:
 	var wynn: Npc = w.get_node("Wynn")
 	var earned := buyer.sell_everything(wynn)
 	eq(earned, 6 * Items.sell_value(&"turnip", 1), "but Wynn can sell it")
+	_finish(w)
+
+
+func test_a_market_trip_cut_short_lets_go_of_the_cart() -> void:
+	var w := _world()
+	var wynn: Npc = w.get_node("Wynn")
+	var cart: HandCart = w.get_node("WynnCart")
+	wynn.instant = true
+	cart.goods.add(&"turnip", 12, 1)
+	Clock.total_minutes = Clock.day() * Clock.MINUTES_PER_DAY + 10 * 60
+	var trip: Task = wynn.role.next_task()
+	check(trip != null and trip.label == "Going to market", "off to market")
+	wynn._task = trip
+	trip.start(wynn)
+	trip.update(wynn, 0.1)   # walk to the handles
+	trip.update(wynn, 0.1)   # take them
+	check(wynn.pulling != null, "pulling the cart")
+	Clock.skip_to_hour(6.0)  # you sleep: the world jumps ahead
+	eq(wynn.pulling, null, "let go of the cart")
+	eq(cart.is_pulled(), false)
+	check(wynn._think() != null, "ready to work again")
 	_finish(w)

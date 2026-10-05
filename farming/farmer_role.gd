@@ -76,9 +76,13 @@ func _job(what: String, where: Vector3, anim: StringName, seconds: float, done: 
 
 func _deliver() -> Task:
 	var id := npc.carry_id
-	if FarmGuide.SHEAVES.has(id) and floor_.sheaves.size() < ThreshingFloor.CAPACITY:
-		return _job("Laying out the sheaves", floor_.global_position, &"crouch", 1.5,
-			func() -> void: floor_.lay_sheaves(npc), &"", 2.2)
+	if FarmGuide.SHEAVES.has(id):
+		if floor_.sheaves.size() < ThreshingFloor.CAPACITY:
+			return _job("Laying out the sheaves", floor_.global_position, &"crouch", 1.5,
+				func() -> void: floor_.lay_sheaves(npc), &"", 2.2)
+		# Floor full: stack them beside it, ready for when there's room (never in the cart).
+		return _job("Stacking sheaves by the floor", _sheaf_stack_spot(), &"crouch", 1.0,
+			func() -> void: npc.set_down_at(_sheaf_stack_spot()), &"", 1.0)
 	return _job("Loading the cart", cart.global_position, &"crouch", 1.2, func() -> void:
 		if npc.is_carrying() and npc.carry_id != &"barrel":
 			cart.load_from(npc)
@@ -151,12 +155,25 @@ func _winnow() -> Task:
 			floor_.add_clean(CHAFF_TO_CLEAN[m.id], m.quality), &"winnowing_basket", 2.2)
 
 
+func _sheaf_stack_spot() -> Vector3:
+	return floor_.global_position + Vector3(3.4, 0, 1.5)
+
+
 ## Sacks of clean grain by the floor, or anything left in a pile near the farm: into the cart.
+## Stacked sheaves go back onto the floor once it has room.
 func _fetch_piles() -> Task:
-	if cart.room() <= 0:
-		return null
 	var piles: Piles = npc.get_tree().get_first_node_in_group("piles")
+	var floor_room := floor_.sheaves.size() < ThreshingFloor.CAPACITY
 	for pile in piles.all_piles():
+		if FarmGuide.SHEAVES.has(pile.id):
+			if floor_room and pile.global_position.distance_to(floor_.global_position) < 6.0:
+				return _job("Fetching sheaves for the floor", pile.global_position, &"crouch", 0.8,
+					func() -> void:
+						if is_instance_valid(pile):
+							pile.take_armful(npc), &"", 1.2)
+			continue
+		if cart.room() <= 0:
+			continue
 		var near_floor := pile.global_position.distance_to(floor_.global_position) < 6.0
 		var near_cart := pile.global_position.distance_to(cart.global_position) < 4.0
 		if near_floor or near_cart:

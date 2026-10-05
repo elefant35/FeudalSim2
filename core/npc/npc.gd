@@ -98,6 +98,8 @@ func _physics_process(delta: float) -> void:
 
 ## Needs first (sleep, food), then whatever the role wants.
 func _think() -> Task:
+	if sleeping:   # loaded while asleep: carry on sleeping where they lie
+		return SleepTask.new()
 	var h := Clock.hour()
 	if h >= 21.0 or h < 5.0 or needs.energy < 12.0:
 		var steps: Array[Task] = [GoTo.new(bedside(), 0.6, "Going home to bed"), SleepTask.new()]
@@ -139,6 +141,8 @@ func interrupt() -> void:
 	if _task:
 		_task.cancel(self)
 		_task = null
+	if pulling:   # never left holding a cart from a trip that's been cut short
+		pulling.call("release", self)
 
 
 # --- Body ------------------------------------------------------------------------------------
