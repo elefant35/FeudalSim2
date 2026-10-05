@@ -70,4 +70,4 @@ func from_dict(d: Dictionary) -> void:
 			units.append(int(q))
 		put(StringName(pd.id), units, Vector3(pd.x, 0, pd.z))
 	for bd: Dictionary in d.get("barrels", []):
-		spawn_barrel(Vector3(bd.x, 0, bd.z), bd.get("goods", {}))
+		spawn_barrel(Vector3(bd.x, 0, bd.z), bd.get("goods", {})).owner_key = StringName(bd.get("owner", "player"))

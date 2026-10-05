@@ -361,7 +361,7 @@ func use(player: Player) -> Minigame:
 		if state.crop and player.carry_space(state.crop.product_item) > 0:
 			var cc := cell_under(p)
 			if state.plants[cc] == PlotState.Plant.CUT:
-				_bind(player, cc)
+				bind(player, cc)
 			elif state.plants[cc] == PlotState.Plant.ALIVE and state.is_ripe() and state.crop.harvest == CropData.Harvest.HANDS:
 				return TugGame.harvest(self, cc)
 		return null
@@ -380,7 +380,7 @@ func use(player: Player) -> Minigame:
 			PlotState.Plant.BLIGHTED:
 				return TugGame.blighted(self, c)
 			PlotState.Plant.CUT:
-				_bind(player, c)
+				bind(player, c)
 				return null
 			PlotState.Plant.ALIVE:
 				if state.is_ripe() and state.crop.harvest == CropData.Harvest.HANDS:
@@ -400,7 +400,7 @@ func use(player: Player) -> Minigame:
 
 
 ## Bind a cut cell into a sheaf, straight into the player's arms.
-func _bind(player: Player, c: int) -> void:
+func bind(player: Actor, c: int) -> void:
 	var product := state.crop.product_item
 	if player.carry_space(product) <= 0:
 		player.say("Your arms are full. Set them down first (E).")
@@ -408,7 +408,8 @@ func _bind(player: Player, c: int) -> void:
 	var q := state.bind_cell(c)
 	if q < 0:
 		return
-	player.viewmodel.play_pick()
+	if player is Player:
+		(player as Player).viewmodel.play_pick()
 	player.pick_up(product, q)
 	player.needs.exert(0.3)
 	Sfx.play_at("rustle", cell_world(c))
@@ -420,7 +421,7 @@ func _bind(player: Player, c: int) -> void:
 
 
 ## Harvest a hand-pulled cell, into the player's arms (or, if it's gone to seed, seed into the pack).
-func harvest_by_hand(player: Player, c: int) -> void:
+func harvest_by_hand(player: Actor, c: int) -> void:
 	if state.is_bolted():
 		var seed_item := state.crop.seed_item
 		var n := state.gather_seed(c)

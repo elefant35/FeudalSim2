@@ -9,12 +9,13 @@ const SHAFT := 2.6        ## Distance from the cart's centre to where you hold t
 const HANDLE_REACH := 1.4 ## How close to the shaft ends counts as "at the handles".
 const MAX_BARRELS := 3
 
+var owner_key: StringName = &"player"
 var goods := Inventory.new()
 var barrels: Array[Inventory] = []   ## Barrels standing in the cart, with what's in them.
 var _stuck_warned := 0.0
 var _visual := Node3D.new()
 var _contents := Node3D.new()
-var _puller: Player = null
+var _puller: Actor = null
 
 
 func _ready() -> void:
@@ -86,7 +87,7 @@ func interact(player: Player) -> void:
 	hud.open_container("Handcart", func() -> Array: return _rows(player))
 
 
-func _load_barrel(player: Player) -> void:
+func _load_barrel(player: Actor) -> void:
 	if barrels.size() >= MAX_BARRELS:
 		player.say("There's no room for another barrel.")
 		return
@@ -118,7 +119,7 @@ func _rows(player: Player) -> Array:
 
 
 ## Loads what the player is carrying (as much as fits).
-func load_from(player: Player) -> void:
+func load_from(player: Actor) -> void:
 	var id := player.carry_id
 	var units := player.take_carry()
 	var fit := mini(units.size(), room())
@@ -133,7 +134,7 @@ func load_from(player: Player) -> void:
 
 
 ## Takes the biggest stack of one kind out, as much as you can carry, best quality first.
-func take_armful(player: Player) -> void:
+func take_armful(player: Actor) -> void:
 	var totals := {}
 	for st in goods.stacks():
 		totals[st.id] = int(totals.get(st.id, 0)) + int(st.count)
@@ -151,22 +152,24 @@ func take_armful(player: Player) -> void:
 	Sfx.play_at("rustle", global_position)
 
 
-func grab(player: Player) -> void:
+func grab(player: Actor) -> void:
 	_puller = player
 	player.pulling = self
 	player.add_collision_exception_with(self)
-	player.viewmodel.set_held(player.held())
-	player.hotbar_changed.emit()
+	player._carry_updated()
 	Sfx.play_at("crank", global_position, -8.0)
 	player.say("Pulling the handcart. E to let go.")
 
 
-func release(player: Player) -> void:
+func release(player: Actor) -> void:
 	_puller = null
 	player.pulling = null
 	player.remove_collision_exception_with(self)
-	player.viewmodel.set_held(player.held())
-	player.hotbar_changed.emit()
+	player._carry_updated()
+
+
+func is_pulled() -> bool:
+	return _puller != null
 
 
 func _physics_process(delta: float) -> void:
@@ -196,7 +199,8 @@ func _physics_process(delta: float) -> void:
 			if _stuck_warned <= 0.0:
 				_stuck_warned = 2.5
 				Sfx.play_at("thump", global_position, -6.0)
-				_puller.viewmodel.play_jerk()
+				if _puller is Player:
+					(_puller as Player).viewmodel.play_jerk()
 				_puller.say("The handcart is caught. Back up or turn to free it (E lets go).")
 		return
 	global_position = to
@@ -242,12 +246,13 @@ func to_dict() -> Dictionary:
 	var bs: Array = []
 	for inv in barrels:
 		bs.append(inv.to_dict())
-	return {"x": global_position.x, "z": global_position.z, "yaw": global_rotation.y, "goods": goods.to_dict(), "barrels": bs}
+	return {"x": global_position.x, "z": global_position.z, "yaw": global_rotation.y, "goods": goods.to_dict(), "barrels": bs, "owner": String(owner_key)}
 
 
 func from_dict(d: Dictionary) -> void:
 	global_position = Vector3(d.x, Terrain.height_at(d.x, d.z), d.z)
 	global_rotation = Vector3(0, float(d.yaw), 0)
+	owner_key = StringName(d.get("owner", owner_key))
 	goods.from_dict(d.get("goods", {}))
 	for inv in barrels:
 		inv.queue_free()

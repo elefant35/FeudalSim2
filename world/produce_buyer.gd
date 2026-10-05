@@ -7,7 +7,7 @@ const CART_RANGE := 9.0
 
 
 func get_prompt(player: Player) -> String:
-	var cart := nearby_cart()
+	var cart := nearby_cart(player.owner_key)
 	var extra := "  ·  your handcart is close enough to sell from" if cart and cart.count() > 0 else ""
 	if player.pulling and not extra:
 		extra = "  ·  let go of the handcart here to sell from it"
@@ -20,12 +20,52 @@ func interact(player: Player) -> void:
 	hud.open_trade("Produce Buyer", func() -> Array: return _rows(player))
 
 
-## A handcart parked within reach of the buyer (and not being pulled).
-func nearby_cart() -> HandCart:
+## A handcart belonging to `owner_key`, parked within reach of the buyer.
+func nearby_cart(owner_key: StringName = &"player") -> HandCart:
 	for c: HandCart in get_tree().get_nodes_in_group("cart"):
-		if c.global_position.distance_to(global_position) < CART_RANGE:
+		if c.owner_key == owner_key and c.global_position.distance_to(global_position) < CART_RANGE:
 			return c
 	return null
+
+
+## Everything an actor can sell here: [label, Inventory] for their cart, its barrels, and their
+## barrels standing nearby. Only their own things: the neighbour's cart isn't yours to sell.
+func _sources(actor: Actor) -> Array:
+	var sources: Array = []
+	var cart := nearby_cart(actor.owner_key)
+	if cart:
+		sources.append(["In the handcart", cart.goods])
+		for i in cart.barrels.size():
+			sources.append(["In barrel %d on the handcart" % (i + 1), cart.barrels[i]])
+	for b: Barrel in get_tree().get_nodes_in_group("barrel"):
+		if b.owner_key == actor.owner_key and b.global_position.distance_to(global_position) < CART_RANGE:
+			sources.append(["In a barrel beside the buyer", b.goods])
+	return sources
+
+
+## Sells everything sellable the actor has brought: arms, pack produce, cart and barrels.
+## Returns the gold earned. (What a farmer NPC does at market.)
+func sell_everything(actor: Actor) -> int:
+	var total := 0
+	if actor.is_carrying() and Items.sell_value(actor.carry_id, 1) > 0:
+		var id := actor.carry_id
+		for q in actor.take_carry():
+			total += Items.sell_value(id, q)
+	var invs: Array = []
+	for src: Array in _sources(actor):
+		invs.append(src[1])
+	for inv: Inventory in invs:
+		for st in inv.stacks():
+			var it := Items.item(st.id)
+			if it == null or it.kind == ItemData.Kind.FOOD:
+				continue
+			var each := Items.sell_value(st.id, st.quality)
+			if each > 0 and inv.remove(st.id, st.count, st.quality):
+				total += each * st.count
+	if total > 0:
+		actor.wallet.add(total)
+		Sfx.play_at("coins", global_position, -6.0)
+	return total
 
 
 func _rows(player: Player) -> Array:
@@ -42,17 +82,8 @@ func _rows(player: Player) -> Array:
 		var id: StringName = st.id
 		var q: int = st.quality
 		_add_row(rows, "In your pack", id, q, st.count, func(n: int) -> void: _sell_from(player, player.inventory, id, q, n))
-	# In the handcart (loose and in its barrels), and in barrels set down nearby.
-	var sources: Array = []
-	var cart := nearby_cart()
-	if cart:
-		sources.append(["In the handcart", cart.goods])
-		for i in cart.barrels.size():
-			sources.append(["In barrel %d on the handcart" % (i + 1), cart.barrels[i]])
-	for b: Barrel in get_tree().get_nodes_in_group("barrel"):
-		if b.global_position.distance_to(global_position) < CART_RANGE:
-			sources.append(["In a barrel beside the buyer", b.goods])
-	for src: Array in sources:
+	# In your handcart (loose and in its barrels), and your barrels set down nearby.
+	for src: Array in _sources(player):
 		var inv: Inventory = src[1]
 		for st in inv.stacks():
 			var id: StringName = st.id

@@ -79,7 +79,7 @@ func sheaf_position() -> Vector3:
 
 
 ## Adds threshing progress to the current sheaf. Returns a message when a sheaf is done.
-func beat(amount: float, _player: Player) -> String:
+func beat(amount: float, _actor: Actor) -> String:
 	if not has_sheaves():
 		return ""
 	sheaves[0].progress += amount
@@ -149,18 +149,24 @@ func interact(player: Player) -> void:
 		if not SHEAF_TO_CHAFF.has(player.carry_id):
 			player.set_down()   # beside the floor, at your feet
 			return
-		var id := player.carry_id
-		var units := player.take_carry()
-		var laid := 0
-		for q in units:
-			if sheaves.size() < CAPACITY:
-				sheaves.append({"id": String(id), "quality": q, "progress": 0.0})
-				laid += 1
-			else:
-				player.pick_up(id, q)
-		Sfx.play_at("rustle", global_position)
-		player.say("You lay out %d sheaf%s." % [laid, "" if laid == 1 else "s"] if laid > 0 else "The floor is full. Thresh what's here first.")
-		_refresh()
+		lay_sheaves(player)
+
+
+## Lays out the sheaves the actor carries (as many as fit). Returns how many were laid.
+func lay_sheaves(actor: Actor) -> int:
+	var id := actor.carry_id
+	var units := actor.take_carry()
+	var laid := 0
+	for q in units:
+		if sheaves.size() < CAPACITY:
+			sheaves.append({"id": String(id), "quality": q, "progress": 0.0})
+			laid += 1
+		else:
+			actor.pick_up(id, q)
+	Sfx.play_at("rustle", global_position)
+	actor.say("You lay out %d sheaf%s." % [laid, "" if laid == 1 else "s"] if laid > 0 else "The floor is full. Thresh what's here first.")
+	_refresh()
+	return laid
 
 
 func use(player: Player) -> Minigame:

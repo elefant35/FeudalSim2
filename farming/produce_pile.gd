@@ -75,25 +75,35 @@ func get_prompt(player: Player) -> String:
 func interact(player: Player) -> void:
 	if player.is_carrying():
 		if player.carry_id == id:
-			var n := player.carry_count()
-			units.append_array(player.take_carry())
-			Sfx.play_at("rustle", global_position)
-			player.say("Added %d to the pile (%d now)." % [n, units.size()])
-			refresh()
+			add_from(player)
 		else:
 			player.set_down()
 		return
-	# Best quality first.
+	take_armful(player)
+
+
+## Adds what the actor carries (same kind) to the pile.
+func add_from(actor: Actor) -> void:
+	var n := actor.carry_count()
+	units.append_array(actor.take_carry())
+	Sfx.play_at("rustle", global_position)
+	actor.say("Added %d to the pile (%d now)." % [n, units.size()])
+	refresh()
+
+
+## Picks up as much as the actor can carry, best quality first.
+func take_armful(actor: Actor) -> int:
 	units.sort()
 	var took := 0
-	while not units.is_empty() and player.carry_space(id) > 0:
-		player.pick_up(id, units.pop_back())
+	while not units.is_empty() and actor.carry_space(id) > 0:
+		actor.pick_up(id, units.pop_back())
 		took += 1
 	Sfx.play_at("rustle", global_position)
 	if units.is_empty():
 		queue_free()
 	else:
 		refresh()
+	return took
 
 
 func to_dict() -> Dictionary:

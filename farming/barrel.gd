@@ -6,6 +6,7 @@ extends StaticBody3D
 
 const CAPACITY := 24
 
+var owner_key: StringName = &"player"
 var goods := Inventory.new()
 var _top := Node3D.new()
 
@@ -66,7 +67,7 @@ func interact(player: Player) -> void:
 
 
 ## Moves what the player carries into `inv` (as much as fits; the rest stays in their arms).
-static func fill(inv: Inventory, capacity: int, player: Player) -> int:
+static func fill(inv: Inventory, capacity: int, player: Actor) -> int:
 	var id := player.carry_id
 	var units := player.take_carry()
 	units.sort()
@@ -111,11 +112,12 @@ func _rows(player: Player) -> Array:
 
 
 ## Picks the barrel up, contents and all.
-func lift(player: Player) -> void:
+func lift(player: Actor) -> void:
 	player.carry_barrel(goods.to_dict())
 	Sfx.play_at("thump", global_position, -6.0)
-	var hud: Hud = get_tree().current_scene.hud
-	hud.close_panel()
+	if player is Player:
+		var hud: Hud = get_tree().current_scene.hud
+		hud.close_panel()
 	queue_free()
 
 
@@ -144,4 +146,4 @@ func _refresh() -> void:
 
 
 func to_dict() -> Dictionary:
-	return {"x": global_position.x, "z": global_position.z, "goods": goods.to_dict()}
+	return {"x": global_position.x, "z": global_position.z, "goods": goods.to_dict(), "owner": String(owner_key)}

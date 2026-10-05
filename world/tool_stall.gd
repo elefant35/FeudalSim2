@@ -35,7 +35,7 @@ func _rows(player: Player) -> Array:
 	return rows
 
 
-func _buy(player: Player, it: ItemData) -> void:
+func _buy(player: Actor, it: ItemData) -> void:
 	if not player.wallet.spend(it.buy_price):
 		return
 	if it.carry_max > 0:
