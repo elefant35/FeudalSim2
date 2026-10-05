@@ -7,6 +7,7 @@ extends Node
 ## --day=D         jump to day D (0 = first day of spring, year 1)
 ## --pos=x,y,z     move the player;  --look=yaw,pitch  in degrees
 ## --give=id:n,..  add items;  --gold=n
+## --speed=n       time speed index: 0 = 1x, 1 = 2x, 2 = 4x
 ## --scenario=name run a setup function on the world (world.dev_scenario)
 ## --shot=path     save a screenshot after --wait seconds (default 2.5), then quit
 ## --hold=slot     select a hotbar slot
@@ -42,6 +43,9 @@ func apply(world: Node3D, player: Player) -> void:
 		Clock.total_minutes = int(args.day) * Clock.MINUTES_PER_DAY + Clock.hour() * 60.0
 	if args.has("hour"):
 		Clock.total_minutes = Clock.day() * Clock.MINUTES_PER_DAY + float(args.hour) * 60.0
+	if args.has("speed"):
+		Clock.speed_index = int(args.speed)
+		Clock.speed_changed.emit(Clock.speed())
 	if args.has("rain"):
 		Clock.raining = args.rain == "true"
 	if args.has("gold"):

@@ -12,7 +12,8 @@ const TOOL_GRIP := {
 }
 
 var role: Role
-var bed: Vector3              ## Where they sleep.
+var bed: Vector3              ## Where they sleep (the middle of the mattress).
+var bed_head := Vector3(0, 0, -1)   ## Which way the bed's head (pillow) end points.
 var home: Vector3             ## Where they wait when there's nothing to do.
 var instant: bool = false     ## Tests: walking and work complete at once.
 var sleeping: bool = false
@@ -51,7 +52,7 @@ func _ready() -> void:
 	_apply_tint()
 	_agent.path_desired_distance = 0.6
 	_agent.target_desired_distance = 0.5
-	_agent.radius = 0.4
+	_agent.radius = 0.3
 	_agent.height = 1.7
 	add_child(_agent)
 	_bubble.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -99,7 +100,7 @@ func _physics_process(delta: float) -> void:
 func _think() -> Task:
 	var h := Clock.hour()
 	if h >= 21.0 or h < 5.0 or needs.energy < 12.0:
-		var steps: Array[Task] = [GoTo.new(bed, 0.6, "Going home to bed"), SleepTask.new()]
+		var steps: Array[Task] = [GoTo.new(bedside(), 0.6, "Going home to bed"), SleepTask.new()]
 		return Sequence.new("Going to bed", steps)
 	if needs.hunger < 35.0:
 		if _has_food():
@@ -223,18 +224,26 @@ func _animate() -> void:
 	_anim.speed_scale = horiz / 1.7 if horiz > 0.2 and _action == &"" else float(Clock.speed())
 
 
+## Where to stand beside the bed (the bed itself is solid).
+func bedside() -> Vector3:
+	return bed + Vector3(bed_head.z, 0, -bed_head.x) * 0.9
+
+
+## Lies on the bed: feet at the foot end, head on the pillow.
 func lie_down() -> void:
 	sleeping = true
-	global_position = bed
-	_visual.rotation = Vector3(-PI / 2, 0, 0)
-	_visual.position = Vector3(0, 0.55, 0.85)
+	stop_walking()
+	rotation.y = atan2(bed_head.x, bed_head.z)        # local +Z towards the pillow
+	global_position = bed - bed_head * 0.85
+	_visual.rotation = Vector3(PI / 2, 0, 0)          # the body tips over onto its back, head along +Z
+	_visual.position = Vector3(0, 0.62, 0)
 
 
 func get_up() -> void:
 	sleeping = false
 	_visual.rotation = Vector3.ZERO
 	_visual.position = Vector3.ZERO
-	global_position = bed + Vector3(0.9, 0, 0)
+	global_position = bedside()
 
 
 # --- Needs and time --------------------------------------------------------------------------

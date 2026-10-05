@@ -7,7 +7,10 @@ See [docs/00-vision-original.md](docs/00-vision-original.md) for the long-term v
 
 ## Status
 
-**Chunk 1: Farming** is playable. See [docs/chunks/01-farming.md](docs/chunks/01-farming.md) for what's in it.
+- **Chunk 1: Farming** is playable. See [docs/chunks/01-farming.md](docs/chunks/01-farming.md).
+- **Chunk 2: A farmer NPC** is playable. **Wynn**, your neighbour, farms the smallholding east of
+  yours by the same rules. Watch him work, or press E to talk. See
+  [docs/chunks/02-farmer-npc.md](docs/chunks/02-farmer-npc.md).
 
 ## Running
 

@@ -284,6 +284,9 @@ func dev_scenario(scenario: String) -> void:
 			v.global_position = Vector3(-6, 0, 0)
 			NavigationServer3D.set_debug_enabled(true)
 			get_tree().debug_navigation_hint = true
+		"market":
+			# Wynn's cart already loaded: he should pull it to market.
+			($WynnCart as HandCart).goods.add(&"turnip", 12, 2)
 		"workshow":
 			# Every work animation on a real villager, with the right tool in hand.
 			var jobs := [[&"walk", &""], [&"carry", &""], [&"hoe", &"hoe"], [&"sow", &"seed_pouch"], [&"pour", &"bucket"],

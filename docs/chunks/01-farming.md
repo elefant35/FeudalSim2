@@ -1,6 +1,6 @@
 # Chunk 1: Farming
 
-**Status:** playable, awaiting Tyler's first playtest
+**Status:** done (playtested through five rounds of feedback)
 
 A first-person medieval farm through the year. You till, sow, water, weed, protect and harvest your
 fields, thresh and winnow your grain, and sell the crop for gold. You also eat, sleep, and plan your

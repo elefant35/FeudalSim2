@@ -36,9 +36,11 @@ func update(npc: Npc, delta: float) -> bool:
 		_stuck = 0.0
 	_last = npc.global_position
 	if _stuck > 4.0:
-		print("NPC %s was stuck walking to %s; hopped there" % [npc.name, target.snapped(Vector3.ONE * 0.1)])
+		print("NPC %s was stuck at %s walking to %s; hopped there" % [npc.name, npc.global_position.snapped(Vector3.ONE * 0.1), target.snapped(Vector3.ONE * 0.1)])
 		npc.global_position = Vector3(target.x, Terrain.height_at(target.x, target.z), target.z)
 		npc.stop_walking()
+		if npc.pulling and npc.pulling.has_method("trail"):
+			npc.pulling.trail()
 		return true
 	return false
 

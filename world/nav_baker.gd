@@ -5,6 +5,7 @@ extends RefCounted
 ## straight lines until it's ready.
 
 const AREA := AABB(Vector3(-32, -3, -26), Vector3(76, 14, 52))
+const CELL := 0.15
 
 
 static func bake(world: Node3D) -> NavigationRegion3D:
@@ -13,13 +14,18 @@ static func bake(world: Node3D) -> NavigationRegion3D:
 	nm.geometry_collision_mask = 1
 	nm.geometry_source_geometry_mode = NavigationMesh.SOURCE_GEOMETRY_GROUPS_WITH_CHILDREN
 	nm.geometry_source_group_name = &"nav_source"
-	nm.cell_size = 0.25
-	nm.cell_height = 0.25
-	nm.agent_height = 1.7
-	nm.agent_radius = 0.4
-	nm.agent_max_climb = 0.35
+	# A fine grid: the 0.3 m body margin rounds up to whole cells, and on a coarse grid that
+	# closes the 1.1 m cottage doorways.
+	nm.cell_size = CELL
+	nm.cell_height = CELL
+	nm.agent_height = 1.65   # whole cells (11 × 0.15)
+	nm.agent_radius = 0.3   # matches the body; any wider and cottage doorways close up
+	nm.agent_max_climb = 0.3   # whole cells (2 × 0.15)
 	nm.agent_max_slope = 40.0
 	nm.filter_baking_aabb = AREA
+	var map := world.get_world_3d().navigation_map
+	NavigationServer3D.map_set_cell_size(map, CELL)
+	NavigationServer3D.map_set_cell_height(map, CELL)
 	var region := NavigationRegion3D.new()
 	region.name = "Navigation"
 	region.navigation_mesh = nm

@@ -38,11 +38,15 @@ A chunk is done when:
 - README "How to play" is updated, and `docs/chunks/NN-name.md` says what shipped and what's left.
 
 **Roadmap** (Tyler decides the order; ask before starting a new chunk):
-1. **Farming**, with basic needs (eat, sleep), gold, a tool shop and a produce buyer. *← current*
-2. Baking (probably): flour, ovens, bread
-3. Market
-4. Tool craftsmen
-5. Later: more professions, villagers, the settlement, society, conflict
+1. **Farming**, with basic needs (eat, sleep), gold, a tool shop and a produce buyer. *(done)*
+2. **A farmer NPC** who works his own farm with the player's rules. *← current*
+3. Baking (probably): flour, ovens, bread, and a baker NPC
+4. Market
+5. Tool craftsmen
+6. Later: more professions, the settlement, society, conflict
+
+Each profession now comes in two halves: the player's first-person version (minigames), then a
+villager who can step into the same role.
 
 ## Keep the vision in mind, don't build it
 
@@ -50,13 +54,15 @@ Build what this chunk needs, shaped so it won't fight the future. Examples:
 
 | Do | Don't (yet) |
 |---|---|
-| Needs (hunger, fatigue) are a component on the player that a villager could carry later | Build villagers, AI, schedules |
+| Anyone who lives in the world is an `Actor` (needs, gold, pack, arms, body); world objects take an `Actor` | Write world logic that only the player can use |
+| A profession for villagers is a `Role`: decisions only, handing out `Task`s (GoTo, Work...) | Put profession logic in `Npc`, or give NPCs shortcuts around the rules |
+| Villager motions are pose tables in `tools/blender/make_villager.py` on the one shared rig | Download a pre-animated character per profession |
 | Gold is an integer in a wallet; shops read fixed prices from data | Build an economy sim, supply/demand, bartering |
 | Items, crops and tools are data (`.tres` Resources), so baking can consume our wheat later | Build a generic crafting framework before a second profession needs one |
 | World actions are methods on the object being acted on (`plot.till(actor)`), so any actor could call them | Add an action-planning or AI layer |
 | One world scene that later chunks extend | Build a level/streaming/mod system |
 
-Also not yet: LLM code, networking, multiplayer, determinism frameworks, design bibles.
+Also not yet: LLM code and dialogue, networking, multiplayer, determinism frameworks, design bibles.
 **Generalize on the second use, not the first.** When baking needs something farming built, extract it then.
 
 ## Stack and commands
@@ -72,9 +78,9 @@ Also not yet: LLM code, networking, multiplayer, determinism frameworks, design 
 
 ```
 project.godot
-core/            shared across chunks: player, needs, wallet, inventory, time of day, save
+core/            shared across chunks: actor, player, npc (body, tasks, roles), needs, wallet, inventory, time
 world/           the map: terrain, house, shops, props
-farming/         chunk 1: plots, crops, farm tools, mini-games
+farming/         plots, crops, farm tools, mini-games, and the FarmerRole
 assets/          models/ sounds/ textures/ fonts/, and assets/CREDITS.md
 tools/blender/   scripts that generate our own models
 tests/           headless tests

@@ -197,7 +197,8 @@ func _market() -> Task:
 			_shop()),
 		_ToCart.new(cart),   # back round to the handles, wherever the cart ended up
 		DoNow.new("", func() -> void: cart.grab(npc)),
-		GoTo.new(home_spot - Vector3(HandCart.SHAFT, 0, 0), 1.0, "Bringing the cart home"),
+		# Coming up from the lane, the cart trails behind (south), so stop a shaft short of its spot.
+		GoTo.new(home_spot - Vector3(0, 0, HandCart.SHAFT), 1.0, "Bringing the cart home"),
 		DoNow.new("", func() -> void: cart.release(npc)),
 	]
 	return Sequence.new("Going to market", steps)
@@ -273,6 +274,9 @@ func _sow() -> Task:
 		if c == null or p.state.sow_error(c, Clock.season()) != "":
 			continue
 		if npc.inventory.count(c.seed_item) < SOW_POINTS.size():
+			var trip := _seed_trip(c)
+			if trip:
+				return trip
 			continue
 		var sigma := 0.04 + (1.0 - SKILL) * 0.1
 		return _job("Sowing %s" % c.display_name.to_lower(), p.global_position, &"sow", 3.0, func() -> void:
@@ -281,6 +285,19 @@ func _sow() -> Task:
 					p.state.sow(c, pt + Vector2(rng.randfn(0.0, sigma), rng.randfn(0.0, sigma)))
 			p.refresh(), &"seed_pouch", 1.4)
 	return null
+
+
+## Out of seed for a bed: walk to the stall and buy some, if there's money for it.
+func _seed_trip(c: CropData) -> Task:
+	var stall: ToolStall = npc.get_tree().get_first_node_in_group("stall")
+	var price := Items.item(c.seed_item).buy_price
+	var h := Clock.hour()
+	if stall == null or npc.wallet.gold < price + 2 or h < 7.0 or h > 17.0:
+		return null
+	return _job("Off to buy %s seed" % c.display_name.to_lower(), stall.global_position + Vector3(0, 0, -2.2), &"idle", 1.0,
+		func() -> void:
+			_shop()
+			npc.say("Seed for the beds, and that's my coin gone." if npc.wallet.gold < 5 else "That'll do for seed."), &"", 1.5)
 
 
 func _till() -> Task:

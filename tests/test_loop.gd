@@ -510,3 +510,47 @@ func test_neighbour_farms_a_year() -> void:
 			crops += 1
 	check(crops > 0, "beds in use at year end")
 	_finish(w)
+
+
+func test_neighbour_saves_and_wakes_after_your_sleep() -> void:
+	var w := _world()
+	var wynn: Npc = w.get_node("Wynn")
+	var role: FarmerRole = wynn.role
+	wynn.wallet.add(33)
+	role.water = 0.5
+	role.seed_bed = 2
+	wynn.pick_up(&"turnip", 2)
+	var d: Dictionary = JSON.parse_string(JSON.stringify(wynn.to_dict()))
+	var gold := wynn.wallet.gold
+	# He goes to bed; you sleep; the clock jumps to morning.
+	wynn.lie_down()
+	wynn.needs.energy = 20.0
+	Clock.total_minutes = Clock.day() * Clock.MINUTES_PER_DAY + 22 * 60
+	Clock.skip_to_hour(6.0)
+	eq(wynn.sleeping, false, "up in the morning")
+	check(wynn.needs.energy > 90.0, "rested")
+	check(wynn.global_position.distance_to(wynn.home) < 0.5, "starts the day at home")
+	_finish(w)
+	var w2 := _world()
+	var w2ynn: Npc = w2.get_node("Wynn")
+	w2ynn.from_dict(d)
+	eq(w2ynn.wallet.gold, gold, "gold restored")
+	eq(w2ynn.carry_count(), 1, "arms restored")
+	eq((w2ynn.role as FarmerRole).water, 0.5, "role state restored")
+	eq((w2ynn.role as FarmerRole).seed_bed, 2)
+	_finish(w2)
+
+
+func test_you_cant_sell_the_neighbours_cart() -> void:
+	var w := _world()
+	var player: Player = w.player
+	var buyer: ProduceBuyer = w.get_node("ProduceBuyer")
+	var theirs: HandCart = w.get_node("WynnCart")
+	theirs.goods.add(&"turnip", 6, 1)
+	theirs.global_position = buyer.global_position + Vector3(-3.0, 0, -2.0)
+	for row: Dictionary in buyer._rows(player):
+		check(not String(row.get("tooltip", "")).contains("handcart"), "the neighbour's cart isn't offered to you")
+	var wynn: Npc = w.get_node("Wynn")
+	var earned := buyer.sell_everything(wynn)
+	eq(earned, 6 * Items.sell_value(&"turnip", 1), "but Wynn can sell it")
+	_finish(w)

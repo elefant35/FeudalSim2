@@ -36,8 +36,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
-	var player: Player = get_tree().get_first_node_in_group("player")
-	if not tame and state != State.LEAVING and player and player.global_position.distance_to(global_position) < SCARE_DISTANCE and state == State.PECKING:
+	if not tame and state == State.PECKING and _someone_near():
 		flee()
 	match state:
 		State.ARRIVING:
@@ -62,6 +61,15 @@ func _process(delta: float) -> void:
 			_fly_towards(_target, delta)
 			if global_position.distance_to(_target) < 1.0:
 				queue_free()
+
+
+## Anyone walking up (you or a villager) sends it off.
+func _someone_near() -> bool:
+	for group in ["player", "npc"]:
+		for a: Node3D in get_tree().get_nodes_in_group(group):
+			if a.global_position.distance_to(global_position) < SCARE_DISTANCE:
+				return true
+	return false
 
 
 func _fly_towards(p: Vector3, delta: float) -> void:

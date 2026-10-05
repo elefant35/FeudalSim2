@@ -16,7 +16,7 @@ const NB_HOUSE := Vector3(30.0, 0.0, -9.0)
 const NB_FIELD := Vector3(22.0, 0.0, 3.0)
 const NB_FLOOR := Vector3(22.0, 0.0, -17.0)
 const NB_WELL := Vector3(17.5, 0.0, -9.0)
-const NB_CART := Vector3(29.0, 0.0, 4.0)
+const NB_CART := Vector3(30.5, 0.0, 7.0)   ## Clear of the beds, handy for the lane.
 const NB_LAYOUT: Array[Vector2] = [Vector2(-3, -1.5), Vector2(0, -1.5), Vector2(3, -1.5), Vector2(-3, 1.5), Vector2(0, 1.5), Vector2(3, 1.5)]
 
 static var bed_wake_position := Vector3(-11.0, 0.0, -3.0)
@@ -193,13 +193,14 @@ static func _neighbour(world: Node3D) -> void:
 	cart.owner_key = &"wynn"
 	world.add_child(cart)
 	cart.global_position = NB_CART
-	cart.global_rotation.y = PI / 2
+	cart.global_rotation.y = PI   # handles towards the lane
 	_sign(world, "Wynn's Farm", NB_FIELD + Vector3(-6.0, 0, 5.5), 0.4)
 	var wynn := Npc.new()
 	wynn.name = "Wynn"
 	wynn.display_name = "Wynn"
 	wynn.owner_key = &"wynn"
 	wynn.bed = house.global_transform * Vector3(1.95, 0.0, 1.25)
+	wynn.bed_head = house.global_basis * Vector3(0, 0, -1)
 	wynn.home = house.global_transform * Vector3(0.0, 0.0, -3.6)   # just outside the door
 	wynn.tint = {"tunic": Color(0.33, 0.43, 0.3), "hair": Color(0.55, 0.36, 0.18)}
 	var role := FarmerRole.new()
