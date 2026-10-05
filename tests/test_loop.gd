@@ -616,3 +616,32 @@ func test_crows_flee_wynn_and_he_shoos_them() -> void:
 	crow2._process(0.1)
 	eq(crow2.state, Crow.State.LEAVING, "crows fear villagers too")
 	_finish(w)
+
+
+func test_wynn_buys_a_scarecrow_when_it_pays() -> void:
+	var w := _world()
+	var wynn: Npc = w.get_node("Wynn")
+	var role: FarmerRole = wynn.role
+	var field: Field = w.get_node("WynnField")
+	wynn.instant = true
+	Clock.total_minutes = Clock.day() * Clock.MINUTES_PER_DAY + 10 * 60
+	role.crow_visits = 1
+	wynn.wallet.add(100)
+	check(not role.wants_scarecrow(), "a crow or two isn't worth 20 gold")
+	role.crow_visits = FarmerRole.SCARECROW_AFTER_VISITS
+	wynn.wallet.gold = 25
+	check(not role.wants_scarecrow(), "not if it would leave nothing for seed and bread")
+	wynn.wallet.gold = 60
+	check(role.wants_scarecrow(), "crows keep coming and there's money: worth it")
+	role._shop()
+	check(wynn.inventory.has(&"scarecrow"), "bought one")
+	var t: Task = role.next_task()
+	eq(t.label, "Setting up a scarecrow")
+	t.start(wynn)
+	while not t.update(wynn, 0.1):
+		pass
+	eq(field.scarecrows.size(), 1, "set up among the beds")
+	for p in field.plots:
+		check(field._protected(p), "every bed covered")
+	check(not role.wants_scarecrow(), "no need for a second")
+	_finish(w)

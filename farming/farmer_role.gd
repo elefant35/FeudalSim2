@@ -17,6 +17,10 @@ const SELL_AT := 10        ## Goods in the cart that make a trip to market worth
 const WATER_TO := 0.9       ## Top the soil up to moist; more than this risks soggy.
 const SOW_POINTS: Array[Vector2] = [Vector2(0.33, 0.33), Vector2(0.67, 0.33), Vector2(0.33, 0.67), Vector2(0.67, 0.67)]
 const CHAFF_TO_CLEAN := {&"barley_chaff": &"barley", &"wheat_chaff": &"wheat"}
+## Crow visits before a scarecrow (20 gold) is worth buying, and the money to keep back for
+## seed and bread after buying one.
+const SCARECROW_AFTER_VISITS := 4
+const SCARECROW_RESERVE := 15
 
 var field: Field
 var floor_: ThreshingFloor
@@ -25,6 +29,8 @@ var well: Well
 var water := 0.0            ## How full the bucket is.
 var seed_bed := -1          ## A bed left to go to seed (index into field.plots), or -1.
 var sold_today := 0
+var crow_visits := 0        ## Crows chased off the beds so far.
+var _last_crow: int = 0
 var rng := RandomNumberGenerator.new()
 
 
@@ -52,11 +58,38 @@ func next_task() -> Task:
 	if npc.is_carrying():
 		var more := _gather_more_of(npc.carry_id) if npc.carry_space(npc.carry_id) > 0 else null
 		return more if more else _deliver()
-	for step: Callable in [_shoo, _bind, _harvest, _reap, _thresh, _winnow, _fetch_piles, _market, _tend, _water, _sow, _till]:
+	for step: Callable in [_shoo, _place_scarecrow, _bind, _harvest, _reap, _thresh, _winnow, _fetch_piles, _market, _tend, _water, _sow, _till, _scarecrow_trip]:
 		var t: Task = step.call()
 		if t:
 			return t
 	return null
+
+
+## Is a scarecrow worth the money yet? Crows keep coming, the beds aren't covered, and there'd
+## still be coin left for seed and bread.
+func wants_scarecrow() -> bool:
+	if npc.inventory.has(&"scarecrow") or crow_visits < SCARECROW_AFTER_VISITS:
+		return false
+	for p in field.plots:
+		if not field._protected(p):
+			return npc.wallet.gold >= Items.item(&"scarecrow").buy_price + SCARECROW_RESERVE
+	return false   # already covered
+
+
+## The spot between the beds that covers them all.
+func scarecrow_spot() -> Vector3:
+	return field.global_position + Vector3(1.5, 0, 0)
+
+
+func _place_scarecrow() -> Task:
+	if not npc.inventory.has(&"scarecrow"):
+		return null
+	var spot := scarecrow_spot()
+	return _job("Setting up a scarecrow", spot, &"crouch", 2.0, func() -> void:
+		if field.scarecrow_error(spot) == "" and npc.inventory.remove(&"scarecrow"):
+			field.place_scarecrow(spot)
+			Sfx.play_at("thump", spot)
+			npc.say("That'll keep the crows guessing."), &"scarecrow", 1.4)
 
 
 ## Crows at the seed: hurry over waving and shouting. (They flee from anyone who comes close.)
@@ -65,6 +98,9 @@ func _shoo() -> Task:
 	if crows.is_empty():
 		return null
 	var crow := crows[0]
+	if crow.get_instance_id() != _last_crow:
+		_last_crow = crow.get_instance_id()
+		crow_visits += 1
 	return _job("Shooing crows", crow.global_position, &"shoo", 1.2, func() -> void:
 		if is_instance_valid(crow) and crow.state == Crow.State.PECKING:
 			crow.flee()
@@ -248,6 +284,9 @@ func _shop() -> void:
 				stall._buy(npc, seed)
 	while npc.inventory.count(&"bread") < 3 and npc.wallet.can_afford(Items.item(&"bread").buy_price):
 		stall._buy(npc, Items.item(&"bread"))
+	if wants_scarecrow():
+		stall._buy(npc, Items.item(&"scarecrow"))
+		npc.say("A scarecrow. Cheaper than feeding every crow in the valley.")
 
 
 func _tend() -> Task:
@@ -331,6 +370,16 @@ func _seed_trip(c: CropData) -> Task:
 			npc.say("Seed for the beds, and that's my coin gone." if npc.wallet.gold < 5 else "That'll do for seed."), &"", 1.5)
 
 
+## Nothing more pressing and a scarecrow would pay for itself: walk to the stall for one.
+func _scarecrow_trip() -> Task:
+	var stall: ToolStall = npc.get_tree().get_first_node_in_group("stall")
+	var h := Clock.hour()
+	if stall == null or not wants_scarecrow() or h < 7.0 or h > 17.0:
+		return null
+	return _job("Off to buy a scarecrow", stall.global_position + Vector3(0, 0, -2.2), &"idle", 1.0,
+		func() -> void: _shop(), &"", 1.5)
+
+
 func _till() -> Task:
 	for i in field.plots.size():
 		var p := field.plots[i]
@@ -370,6 +419,10 @@ func chat_line() -> String:
 		lines.append("Took %d gold at market today. Not bad." % sold_today)
 	if seed_bed >= 0:
 		lines.append("I've left a bed to go to seed. Saves buying it.")
+	if crow_visits >= 2 and not field.scarecrows.is_empty():
+		lines.append("Since the scarecrow went up, the crows mostly leave me be.")
+	elif crow_visits >= 2:
+		lines.append("Those crows have been at my seed %d times now." % crow_visits)
 	if Clock.raining:
 		lines.append("Rain does my watering for me today.")
 	match Clock.season():
@@ -385,12 +438,13 @@ func on_day_started() -> void:
 
 
 func to_dict() -> Dictionary:
-	return {"water": water, "seed_bed": seed_bed}
+	return {"water": water, "seed_bed": seed_bed, "crow_visits": crow_visits}
 
 
 func from_dict(d: Dictionary) -> void:
 	water = float(d.get("water", 0.0))
 	seed_bed = int(d.get("seed_bed", -1))
+	crow_visits = int(d.get("crow_visits", 0))
 
 
 ## Walk to wherever the cart's handles are now (they move when the cart is parked).
