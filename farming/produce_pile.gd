@@ -1,6 +1,6 @@
 class_name ProducePile
 extends StaticBody3D
-## A heap of one kind of bulky goods set down on the ground: turnips, cabbages, a stook of
+## A heap of one kind of bulky goods set down on the ground: turnips, cabbages, a stack of
 ## sheaves, sacks of grain. E adds what you carry, or picks up an armful.
 
 const MAX_SHOWN := 24
@@ -34,10 +34,12 @@ func refresh() -> void:
 		var m := Models.make(&"grain_sack" if sack else id)
 		_visual.add_child(m)
 		if sheaf:
-			# A stook: sheaves standing in a ring, leaning together.
-			var a := float(i) / maxf(n, 1) * TAU
-			m.position = Vector3(cos(a) * 0.22, 0, sin(a) * 0.22)
-			m.rotation = Basis(Vector3.UP, -a).rotated(Vector3(sin(a), 0, -cos(a)), 0.18).get_euler()
+			# Laid flat and stacked like a woodpile: three abreast, heads alternating, layer on layer.
+			var layer := i / 3
+			var col := i % 3
+			m.rotation = Vector3(PI / 2, PI if (col + layer) % 2 else 0.0, 0)
+			m.position = Vector3((col - 1) * 0.26 + (0.13 if layer % 2 else 0.0), 0.09 + layer * 0.15, 0.0)
+			m.position.z = (0.4 if (col + layer) % 2 else -0.4)
 		elif sack:
 			var row := i % 4
 			m.position = Vector3((row % 2) * 0.45 - 0.22, (i / 4) * 0.5, (row / 2) * 0.4 - 0.2)
@@ -50,8 +52,8 @@ func refresh() -> void:
 			m.position = Vector3(cos(a) * r, maxf(0.0, 0.12 - r * 0.25) * layer + layer * 0.03, sin(a) * r)
 			m.rotation = Vector3(rng.randf_range(-0.4, 0.4), rng.randf() * TAU, rng.randf_range(-0.4, 0.4))
 	var cyl := _shape.shape as CylinderShape3D
-	var tall := 0.95 if sheaf else (0.6 + 0.5 * float(units.size() / 4) if sack else 0.3)
-	cyl.radius = 0.5 if sheaf else 0.45
+	var tall := (0.2 + 0.15 * float(units.size() / 3)) if sheaf else (0.6 + 0.5 * float(units.size() / 4) if sack else 0.3)
+	cyl.radius = 0.55 if sheaf else 0.45
 	cyl.height = minf(tall, 1.6)
 	_shape.position.y = cyl.height / 2.0
 

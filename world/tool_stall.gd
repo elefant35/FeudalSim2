@@ -22,6 +22,10 @@ func _rows(player: Player) -> Array:
 		return a.buy_price < b.buy_price)
 	for it: ItemData in items:
 		var owned := it.kind == ItemData.Kind.TOOL and player.inventory.has(it.id)
+		if it.carry_max > 0:
+			var label_b := "%s · %d gold" % [it.display_name, it.buy_price]
+			rows.append({"label": label_b, "tooltip": it.description, "buttons": [{"text": "Buy", "enabled": player.wallet.can_afford(it.buy_price), "action": func() -> void: _buy(player, it)}]})
+			continue
 		var qty := " (%d handfuls)" % it.buy_quantity if it.kind == ItemData.Kind.SEED else ""
 		var have := "" if it.kind == ItemData.Kind.TOOL else "   you have %d" % player.inventory.count(it.id)
 		var label := "%s%s · %d gold%s" % [it.display_name, qty, it.buy_price, have]
@@ -33,6 +37,13 @@ func _rows(player: Player) -> Array:
 
 func _buy(player: Player, it: ItemData) -> void:
 	if not player.wallet.spend(it.buy_price):
+		return
+	if it.carry_max > 0:
+		# Bulky things (a barrel) are set down beside the stall for you to carry off.
+		var piles: Piles = get_tree().get_first_node_in_group("piles")
+		piles.spawn_barrel(global_position + Vector3(randf_range(-1.5, 1.5), 0, -2.2))
+		Sfx.play("coins", -4.0)
+		player.say("Your barrel is waiting beside the stall.")
 		return
 	player.inventory.add(it.id, it.buy_quantity)
 	Sfx.play("coins", -4.0)

@@ -7,8 +7,11 @@ extends AnimatableBody3D
 const CAPACITY := 40
 const SHAFT := 2.6        ## Distance from the cart's centre to where you hold the shafts.
 const HANDLE_REACH := 1.4 ## How close to the shaft ends counts as "at the handles".
+const MAX_BARRELS := 3
 
 var goods := Inventory.new()
+var barrels: Array[Inventory] = []   ## Barrels standing in the cart, with what's in them.
+var _stuck_warned := 0.0
 var _visual := Node3D.new()
 var _contents := Node3D.new()
 var _puller: Player = null
@@ -58,23 +61,60 @@ func get_prompt(player: Player) -> String:
 	var head := "Handcart · %d/%d" % [count(), CAPACITY]
 	if _puller:
 		return head
+	if not barrels.is_empty():
+		head += " · %d barrel%s" % [barrels.size(), "" if barrels.size() == 1 else "s"]
 	if player.is_carrying():
+		if player.carry_id == &"barrel":
+			return "%s\n[E] Stand the barrel in the cart" % head if barrels.size() < MAX_BARRELS else "%s\nNo room for another barrel." % head
 		return "%s\n[E] Load your %s" % [head, player.carry_text()] if room() > 0 else "%s\nIt's full." % head
 	if _at_handles(player):
 		return "%s\n[E] Take the handles and pull" % head
-	if count() > 0:
-		return "%s\n[E] Take an armful out   ·   pull it from the handles at the front" % head
-	return "%s\nEmpty. Load produce into it, then pull it from the handles at the front." % head
+	return "%s\n[E] Look inside   ·   pull it from the handles at the front" % head
 
 
 func interact(player: Player) -> void:
 	if player.is_carrying():
-		load_from(player)
+		if player.carry_id == &"barrel":
+			_load_barrel(player)
+		else:
+			load_from(player)
 		return
 	if _at_handles(player):
 		grab(player)
 		return
-	take_armful(player)
+	var hud: Hud = get_tree().current_scene.hud
+	hud.open_container("Handcart", func() -> Array: return _rows(player))
+
+
+func _load_barrel(player: Player) -> void:
+	if barrels.size() >= MAX_BARRELS:
+		player.say("There's no room for another barrel.")
+		return
+	var inv := Inventory.new()
+	add_child(inv)
+	inv.from_dict(player.carry_payload)
+	inv.changed.connect(_refresh_contents)
+	barrels.append(inv)
+	player.take_carry()
+	Sfx.play_at("thump", global_position, -6.0)
+	_refresh_contents()
+
+
+func _rows(player: Player) -> Array:
+	var rows := Barrel.goods_rows(goods, player)
+	for i in barrels.size():
+		var inv := barrels[i]
+		rows.append_array(Barrel.goods_rows(inv, player, "In barrel %d: " % (i + 1)))
+		rows.append({"label": "Barrel %d (%d inside)" % [i + 1, Barrel.total(inv)], "buttons": [
+			{"text": "Lift it out", "enabled": not player.is_carrying(), "action": func() -> void:
+				player.carry_barrel(inv.to_dict())
+				barrels.erase(inv)
+				inv.queue_free()
+				_refresh_contents()},
+		]})
+	if rows.is_empty():
+		rows.append({"label": "Empty. Load produce, sheaves, grain or barrels into it while carrying them (E).", "buttons": []})
+	return rows
 
 
 ## Loads what the player is carrying (as much as fits).
@@ -144,12 +184,20 @@ func _physics_process(delta: float) -> void:
 	var motion := Vector3(to.x - from.x, 0, to.z - from.z)
 	var moved := motion.length()
 	var turned := Transform3D(Basis(Vector3.UP, atan2(dir.x, dir.z)), from)
+	_stuck_warned = maxf(0.0, _stuck_warned - delta)
 	if moved > 0.0005 and test_move(turned, motion):
-		# Snagged on a fence, a wall or a tree: the cart stays; pull too far and you lose your grip.
-		if from.distance_to(hitch) > SHAFT + 0.9:
-			Sfx.play_at("thump", global_position, -4.0)
-			_puller.say("The handcart caught on something and you lost your grip.")
-			release(_puller)
+		# Snagged on a fence, a wall or a tree: the cart won't come, and it holds you back
+		# (you never silently let go). Back up or turn to work it free, or E to let go.
+		var away := Vector3(hitch.x - from.x, 0, hitch.z - from.z)
+		if away.length() > SHAFT:
+			var held := from + away.normalized() * SHAFT
+			_puller.global_position = Vector3(held.x, _puller.global_position.y, held.z)
+			_puller.velocity = Vector3(0, _puller.velocity.y, 0)
+			if _stuck_warned <= 0.0:
+				_stuck_warned = 2.5
+				Sfx.play_at("thump", global_position, -6.0)
+				_puller.viewmodel.play_jerk()
+				_puller.say("The handcart is caught. Back up or turn to free it (E lets go).")
 		return
 	global_position = to
 	global_rotation = Vector3(0, atan2(dir.x, dir.z), 0)
@@ -160,6 +208,11 @@ func _physics_process(delta: float) -> void:
 func _refresh_contents() -> void:
 	for c in _contents.get_children():
 		c.queue_free()
+	for b in barrels.size():
+		var m := Models.make(&"barrel")
+		m.position = Vector3(-0.35 + b * 0.35, 0.79, 0.65)
+		m.scale = Vector3.ONE * 0.85
+		_contents.add_child(m)
 	var i := 0
 	for st in goods.stacks():
 		var it := Items.item(st.id)
@@ -186,10 +239,23 @@ func _refresh_contents() -> void:
 
 
 func to_dict() -> Dictionary:
-	return {"x": global_position.x, "z": global_position.z, "yaw": global_rotation.y, "goods": goods.to_dict()}
+	var bs: Array = []
+	for inv in barrels:
+		bs.append(inv.to_dict())
+	return {"x": global_position.x, "z": global_position.z, "yaw": global_rotation.y, "goods": goods.to_dict(), "barrels": bs}
 
 
 func from_dict(d: Dictionary) -> void:
 	global_position = Vector3(d.x, Terrain.height_at(d.x, d.z), d.z)
 	global_rotation = Vector3(0, float(d.yaw), 0)
 	goods.from_dict(d.get("goods", {}))
+	for inv in barrels:
+		inv.queue_free()
+	barrels.clear()
+	for bd: Dictionary in d.get("barrels", []):
+		var inv := Inventory.new()
+		add_child(inv)
+		inv.from_dict(bd)
+		inv.changed.connect(_refresh_contents)
+		barrels.append(inv)
+	_refresh_contents()

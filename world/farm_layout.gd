@@ -311,8 +311,6 @@ static func _props(world: Node3D) -> void:
 		place(props, &"stump_round", -10.0, -10.5),
 	]
 	place(props, &"stump_round", -7.5, 6.2)
-	place(props, &"grain_sack", -5.0, -12.5)
-	place(props, &"grain_sack", -4.6, -13.1, 0.7)
 	for n: Node3D in solid_props:
 		collide_with(props, n)
 	var post := place(props, &"lantern_post", -11.2, -1.4, PI)

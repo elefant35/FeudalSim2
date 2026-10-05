@@ -46,12 +46,14 @@ turnip seed, a small store of food (five loaves, four turnips) and 12 gold. Ever
    mouse across it in steady strokes. Then click the cut stalks to bind them into sheaves.
 6. **The harvest is physical.** What you pick goes into your arms (8 turnips, 4 cabbages, 3 sheaves or
    4 sacks of grain). **E** sets it down: in the **handcart**, on the threshing floor (sheaves), or on the
-   grass as a pile or stook. E on a pile or the cart picks an armful back up. Your pack holds 6 produce to
+   grass as a pile (sheaves stack flat). E on a pile or the cart picks an armful back up. Your pack holds 6 produce to
    eat. While your arms are full, you can't use tools.
 7. Carry sheaves to the **threshing floor** (north-west of the house) and press E to lay them out. Thresh
    with the **flail**, clicking as the ring closes; the grain stays on the floor. Then **winnow** with the
    basket: hold to lift and release to toss when the pennant shows a gust. Clean grain goes into sacks
    beside the floor; pick them up with E.
+   **Barrels** (sold at the stall) hold 24 of anything: fill one with E while carrying, open it with E
+   to take things out or lift it (contents and all), set it down anywhere, or stand it in the handcart.
 8. Load the cart, grab its handles (**E** at the front) and pull it down the lane. Park it beside the
    **Produce Bought** cart and sell straight from it. Better quality earns more.
 
@@ -88,7 +90,7 @@ or the mini-games. At 1× a day lasts about 15 minutes.
 | Right click | Stop the current task |
 | E | Interact: bed, stall, piles, cart, threshing floor. Sets down what you're carrying; takes or lets go of the handcart |
 | F | Eat |
-| Tab | Pack: your items as icons. Drag tools and seed onto the hotbar to choose what's at hand |
+| Tab | Pack: your items as icons. Drag tools and seed onto hotbar slots (or back off them). Click an item for its details and actions (Eat). Shift-click moves to/from the hotbar |
 | G | Field guide: what to sow this season, and every crop's steps from field to market |
 | 1–9, mouse wheel | Choose a hotbar slot (slot 1 is always bare hands) |
 | T | Time speed |
@@ -103,6 +105,6 @@ tools/sandbox.sh
 ```
 
 You start with 200 gold, every tool and seed of each crop. Turnips and cabbages are already loaded in the
-handcart, and a stook of barley sheaves stands by the threshing floor. Four plots are
+handcart, a barrel of turnips stands beside it, and a stack of barley sheaves lies by the threshing floor. Four plots are
 ripe (one of each crop), four are half-grown with weeds, caterpillars and blight to deal with, and four
 are left for you to till. The sandbox never reads or writes your real save.

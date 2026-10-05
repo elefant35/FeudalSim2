@@ -84,19 +84,12 @@ func _render(id: StringName) -> void:
 		if i == 1:   # a seed pouch's crop: smaller, beside it
 			m.scale = Vector3.ONE * 0.35
 			m.position = Vector3(0.12, 0, -0.05)
-	var box := _bounds(_holder)
-	var center := box.get_center()
-	var size := box.get_longest_axis_size()
 	var tool := _holder.rotation != Vector3.ZERO
 	var view := Vector3(0.15, 0.25, 1.0) if tool else Vector3(1.0, 0.75, 1.2)
 	if id == &"sickle":
 		_holder.rotation = Vector3(0.8, 0, 0)   # the blade curves forward: look at it side-on
 		view = Vector3(1.0, 0.2, 0.1)
-	_cam.size = size * (0.95 if tool else 1.25)
-	_cam.position = center + view.normalized() * (size * 3.0 + 1.0)
-	_cam.look_at(center, Vector3.UP)
-	_cam.near = 0.01
-	_cam.far = size * 8.0 + 10.0
+	_frame(view.normalized())
 	_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 	await RenderingServer.frame_post_draw
 	var img := _vp.get_texture().get_image()
@@ -104,6 +97,34 @@ func _render(id: StringName) -> void:
 		_tex[id] = ImageTexture.create_from_image(img)
 		icon_ready.emit(id)
 	_busy = false
+
+
+## Points the camera along `dir` and fits it to the model's actual outline on screen (projecting
+## every vertex), so odd shapes like the sickle still sit in the middle of the icon.
+func _frame(dir: Vector3) -> void:
+	var box := _bounds(_holder)
+	var center := box.get_center()
+	var reach := box.get_longest_axis_size() * 3.0 + 1.0
+	_cam.position = center + dir * reach
+	_cam.look_at(center, Vector3.UP)
+	var inv := _cam.global_transform.affine_inverse()
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	for mi: MeshInstance3D in _holder.find_children("*", "MeshInstance3D", true, false):
+		var xf := inv * mi.global_transform
+		for si in mi.mesh.get_surface_count():
+			for v: Vector3 in mi.mesh.surface_get_arrays(si)[Mesh.ARRAY_VERTEX]:
+				var p := xf * v
+				lo = Vector2(minf(lo.x, p.x), minf(lo.y, p.y))
+				hi = Vector2(maxf(hi.x, p.x), maxf(hi.y, p.y))
+	if lo.x == INF:
+		_cam.size = box.get_longest_axis_size() * 1.2
+	else:
+		var mid := (lo + hi) / 2.0
+		_cam.position += _cam.global_basis.x * mid.x + _cam.global_basis.y * mid.y
+		_cam.size = maxf(hi.x - lo.x, hi.y - lo.y) * 1.12
+	_cam.near = 0.01
+	_cam.far = reach * 3.0
 
 
 func _bounds(n: Node3D) -> AABB:

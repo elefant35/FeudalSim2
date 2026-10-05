@@ -89,9 +89,12 @@ func _build_specs() -> void:
 		&"carrying": {"grip_r": Vector3(0.2, 0.02, 0.02), "grip_l": Vector3(-0.2, 0.02, 0.02), "roll_r": -1.5, "roll_l": 1.5, "poses": {
 			"rest": _pose(Vector3(0, -0.45, -0.62), Vector3(0, 1, 0.15), Vector3(0, 0, -1)),
 		}},
-		# Both hands low and forward, gripping the handcart's shafts.
-		&"pulling": {"hand_r": Vector3(0.28, -0.5, -0.3), "hand_l": Vector3(-0.28, -0.5, -0.3), "roll_r": 1.4, "roll_l": -1.4,
-			"poses": {"rest": Transform3D.IDENTITY}},
+		# Walking between the handcart's shafts, a handle end in each fist, the shafts running
+		# back past your hips to the cart behind you.
+		&"pulling": {"grip_r": Vector3(0.3, 0, 0), "grip_l": Vector3(-0.3, 0, 0), "roll_r": 1.5, "roll_l": -1.5, "poses": {
+			"rest": _pose(Vector3(0, -0.33, -0.48), Vector3(0, 1, 0), Vector3(0, 0, -1)),
+			"jerk": _pose(Vector3(0, -0.37, -0.32), Vector3(0, 1, 0.2), Vector3(0, 0, -1)),
+		}},
 	}
 
 
@@ -162,6 +165,12 @@ func _build_armful() -> Node3D:
 	var n := mini(_carry_count, 5)
 	var sheaf := String(_carry_id).ends_with("_sheaf")
 	var sack := it != null and it.kind == ItemData.Kind.GRAIN and not sheaf
+	if _carry_id == &"barrel":
+		var b := Models.make(&"barrel")
+		b.scale = Vector3.ONE * 0.75
+		b.position = Vector3(0, -0.25, 0)
+		root.add_child(b)
+		return root
 	for i in n:
 		var m := Models.make(&"grain_sack" if sack else _carry_id)
 		root.add_child(m)
@@ -179,6 +188,27 @@ func _build_armful() -> Node3D:
 	return root
 
 
+## The handcart's two shaft ends, as seen in your hands while pulling.
+func _build_shafts() -> Node3D:
+	var root := Node3D.new()
+	for side in [-1.0, 1.0]:
+		var pivot := Node3D.new()
+		pivot.position = Vector3(0.3 * side, 0, 0)
+		pivot.rotation.x = 0.35   # running back and down towards the cart
+		root.add_child(pivot)
+		var shaft := Models.box(Vector3(0.05, 0.05, 1.4), Color(0.33, 0.22, 0.13), Vector3(0, 0, 0.62))
+		pivot.add_child(shaft)
+		# The worn handle end pokes forward out of the fist, so you can see what you're holding.
+		var grip := Models.box(Vector3(0.06, 0.06, 0.24), Color(0.24, 0.16, 0.09), Vector3(0, 0, -0.05))
+		pivot.add_child(grip)
+	return root
+
+
+## The cart caught on something: a jolt through the arms.
+func play_jerk() -> void:
+	_animate([[_pose_named("jerk"), 0.08], [_pose_named("rest"), 0.35]])
+
+
 func set_held(id: StringName) -> void:
 	if id == _held_id:
 		return
@@ -192,6 +222,10 @@ func set_held(id: StringName) -> void:
 	_spec = _specs.get(key, _specs[&"hands"])
 	if id == Player.CARRYING and _carry_count > 0:
 		_model = _build_armful()
+		add_child(_model)
+		_no_shadows(_model)
+	elif id == Player.PULLING:
+		_model = _build_shafts()
 		add_child(_model)
 		_no_shadows(_model)
 	elif _spec.has("model"):

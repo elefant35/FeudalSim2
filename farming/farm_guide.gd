@@ -34,7 +34,7 @@ static func next_step(player: Player, field: Field, floor_: ThreshingFloor, pile
 		return "Pull the handcart where you need it. E lets go."
 	if player.is_carrying():
 		if FarmGuide.SHEAVES.has(player.carry_id):
-			return "Lay your sheaves on the threshing floor (E there), or stand them in a stook on the grass (E)."
+			return "Lay your sheaves on the threshing floor (E there), or stack them on the grass (E)."
 		if FarmGuide.CLEAN.has(player.carry_id):
 			return "Load the grain into the handcart (E on it), or carry it to the buyer."
 		return "Set your %s down: in the handcart (E on it), or on the grass as a pile (E)." % player.carry_text()
@@ -79,7 +79,7 @@ static func next_step(player: Player, field: Field, floor_: ThreshingFloor, pile
 		else:
 			produce_piles += 1
 	if sheaf_piles > 0:
-		return "Carry the sheaves from your stook to the threshing floor (E to pick up, E at the floor to lay them)."
+		return "Carry the sheaves from your stack to the threshing floor (E to pick up, E at the floor to lay them)."
 	if ripe_grain:
 		if not inv.has(&"sickle"):
 			return "Your %s is ripe. Buy a sickle at Tools & Seed to reap it." % ripe_grain.state.crop.display_name.to_lower()
@@ -112,11 +112,11 @@ static func sections() -> Array:
 		["The working year",
 			"Till → sow → water → tend → harvest → sell. Aim your hoe at open grass to break a new plot anywhere (the green outline shows where it'll go). Each season lasts 6 days. Crops that grow through two seasons (or over winter) pay best."],
 		["Carrying the harvest",
-			"Produce goes into your arms as you harvest: up to 8 turnips, 4 cabbages, 3 sheaves or 4 sacks of grain. Press E to set it down: in the handcart, on the threshing floor (sheaves), or on the grass as a pile. E on a pile or the cart picks an armful back up. Grab the handcart by its handles (E at the front) to pull it, and park it beside the Produce Buyer to sell straight from it. Your pack holds up to 6 produce for eating."],
+			"Produce goes into your arms as you harvest: up to 8 turnips, 4 cabbages, 3 sheaves or 4 sacks of grain. Press E to set it down: in the handcart, on the threshing floor (sheaves), or on the grass as a pile or stack. E on a pile or the cart picks an armful back up. Grab the handcart by its handles (E at the front) to pull it, and park it beside the Produce Buyer to sell straight from it. Barrels (from the stall) hold 24 of anything: fill one with E while carrying, open it with E to take things out or lift it, contents and all, to carry it or stand it in the cart. Your pack holds up to 6 produce for eating."],
 		["Root crops: turnips and cabbage",
 			"Pull them by hand when ripe (hold left click); they go into your arms. Sell them at the Produce Bought cart, or eat them. Turnips: spring to autumn, ~3 days, survive frost. Cabbage: spring or summer, ~5 days; pick caterpillars off the leaves."],
 		["Grain: barley and wheat",
-			"1. Reap: hold the sickle over the ripe plot and sweep the mouse across it in steady strokes.\n2. Bind: switch to your hands (1) and click each cut bundle to tie it into a sheaf; sheaves go into your arms (3 at a time). Stand them in a stook (E on the grass) or the handcart.\n3. Thresh: carry sheaves to the threshing floor (north-west of the house) and press E to lay them out, then hold the flail and click as the ring closes. The grain stays on the floor with its chaff.\n4. Winnow: hold the winnowing basket at the floor; hold the button to lift, release to toss when the pennant shows a gust. Clean grain goes into sacks beside the floor.\n5. Pick up the sacks (E), load them into the handcart, and sell them at the Produce Bought cart.\nBarley: spring only, ~5 days, killed by frost. Wheat: sow in autumn; it grows slowly over winter and ripens in spring."],
+			"1. Reap: hold the sickle over the ripe plot and sweep the mouse across it in steady strokes.\n2. Bind: switch to your hands (1) and click each cut bundle to tie it into a sheaf; sheaves go into your arms (3 at a time). Stack them on the grass (E) or load the handcart.\n3. Thresh: carry sheaves to the threshing floor (north-west of the house) and press E to lay them out, then hold the flail and click as the ring closes. The grain stays on the floor with its chaff.\n4. Winnow: hold the winnowing basket at the floor; hold the button to lift, release to toss when the pennant shows a gust. Clean grain goes into sacks beside the floor.\n5. Pick up the sacks (E), load them into the handcart, and sell them at the Produce Bought cart.\nBarley: spring only, ~5 days, killed by frost. Wheat: sow in autumn; it grows slowly over winter and ripens in spring."],
 		["Keeping crops healthy",
 			"Water: keep the soil in the marked band; rain does it for you. Weeds: pull them, easing off before the strain hits red. Blight (brown, spotted plants): pull the sick plant with your hands before it spreads to its neighbours; that's all it takes. Crows: they eat fresh seed; walk up to scare them, or set up a scarecrow. Better care means better quality, and better quality sells for more."],
 		["Looking after yourself",

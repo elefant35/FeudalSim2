@@ -10,8 +10,8 @@ func _ready() -> void:
 
 ## Puts goods on the ground at `at`: onto a matching pile nearby, or as a new pile.
 func put(id: StringName, units: Array[int], at: Vector3) -> ProducePile:
-	for p: ProducePile in get_children():
-		if p.is_queued_for_deletion():
+	for p in get_children():
+		if not (p is ProducePile) or p.is_queued_for_deletion():
 			continue
 		if p.id == id and p.global_position.distance_to(at) < ProducePile.MERGE_RADIUS:
 			p.units.append_array(units)
@@ -26,10 +26,27 @@ func put(id: StringName, units: Array[int], at: Vector3) -> ProducePile:
 	return pile
 
 
+func spawn_barrel(at: Vector3, contents: Dictionary = {}) -> Barrel:
+	var b := Barrel.new()
+	add_child(b)
+	b.global_position = Vector3(at.x, Terrain.height_at(at.x, at.z), at.z)
+	b.rotation.y = randf() * TAU
+	b.goods.from_dict(contents)
+	return b
+
+
+func all_barrels() -> Array[Barrel]:
+	var out: Array[Barrel] = []
+	for b in get_children():
+		if b is Barrel and not b.is_queued_for_deletion():
+			out.append(b)
+	return out
+
+
 func all_piles() -> Array[ProducePile]:
 	var out: Array[ProducePile] = []
-	for p: ProducePile in get_children():
-		if not p.is_queued_for_deletion() and not p.units.is_empty():
+	for p in get_children():
+		if p is ProducePile and not p.is_queued_for_deletion() and not p.units.is_empty():
 			out.append(p)
 	return out
 
@@ -38,7 +55,10 @@ func to_dict() -> Dictionary:
 	var list: Array = []
 	for p in all_piles():
 		list.append(p.to_dict())
-	return {"piles": list}
+	var barrels: Array = []
+	for b in all_barrels():
+		barrels.append(b.to_dict())
+	return {"piles": list, "barrels": barrels}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -49,3 +69,5 @@ func from_dict(d: Dictionary) -> void:
 		for q in pd.units:
 			units.append(int(q))
 		put(StringName(pd.id), units, Vector3(pd.x, 0, pd.z))
+	for bd: Dictionary in d.get("barrels", []):
+		spawn_barrel(Vector3(bd.x, 0, bd.z), bd.get("goods", {}))

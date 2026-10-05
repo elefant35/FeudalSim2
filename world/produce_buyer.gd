@@ -42,15 +42,24 @@ func _rows(player: Player) -> Array:
 		var id: StringName = st.id
 		var q: int = st.quality
 		_add_row(rows, "In your pack", id, q, st.count, func(n: int) -> void: _sell_from(player, player.inventory, id, q, n))
-	# In the handcart.
+	# In the handcart (loose and in its barrels), and in barrels set down nearby.
+	var sources: Array = []
 	var cart := nearby_cart()
 	if cart:
-		for st in cart.goods.stacks():
+		sources.append(["In the handcart", cart.goods])
+		for i in cart.barrels.size():
+			sources.append(["In barrel %d on the handcart" % (i + 1), cart.barrels[i]])
+	for b: Barrel in get_tree().get_nodes_in_group("barrel"):
+		if b.global_position.distance_to(global_position) < CART_RANGE:
+			sources.append(["In a barrel beside the buyer", b.goods])
+	for src: Array in sources:
+		var inv: Inventory = src[1]
+		for st in inv.stacks():
 			var id: StringName = st.id
 			var q: int = st.quality
-			_add_row(rows, "In the handcart", id, q, st.count, func(n: int) -> void: _sell_from(player, cart.goods, id, q, n))
+			_add_row(rows, src[0], id, q, st.count, func(n: int) -> void: _sell_from(player, inv, id, q, n))
 	if rows.is_empty() and not player.is_carrying():
-		rows.append({"label": "Bring produce or clean grain in your arms, or park your handcart beside the buyer.", "buttons": []})
+		rows.append({"label": "Bring produce or clean grain in your arms, or park your handcart (or a barrel) beside the buyer.", "buttons": []})
 	return rows
 
 

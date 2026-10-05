@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://core/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"barrel"
+display_name = "Barrel"
+description = "Holds 24 produce or sacks of grain. Fill it, lift it (contents and all), set it down anywhere or load it into the handcart."
+kind = 5
+buy_price = 12
+buy_quantity = 1
+sell_price = 0
+food_value = 0.0
+has_quality = false
+crop = &""
+hotbar = false
+carry_max = 1

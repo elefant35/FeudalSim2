@@ -406,7 +406,7 @@ func _bind(player: Player, c: int) -> void:
 	Sfx.play_at("rustle", cell_world(c))
 	refresh()
 	if player.carry_space(product) == 0:
-		player.say("Your arms are full of sheaves. Set them down in a stook (E on the grass) or the handcart.")
+		player.say("Your arms are full of sheaves. Stack them on the grass (E) or load the handcart.")
 	elif not field.any_cut():
 		player.say("All bound. Stack your sheaves, then take them to the threshing floor.")
 

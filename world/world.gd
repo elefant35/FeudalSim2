@@ -292,9 +292,11 @@ func dev_scenario(scenario: String) -> void:
 			var cart: HandCart = $HandCart
 			cart.goods.add(&"turnip", 6, 2)
 			cart.goods.add(&"cabbage", 3, 1)
-			var stook: Array[int] = [2, 2, 1]
-			($Piles as Piles).put(&"barley_sheaf", stook, FarmLayout.THRESHING_POS + Vector3(3.2, 0, -1.0))
+			var stack: Array[int] = [2, 2, 1]
+			($Piles as Piles).put(&"barley_sheaf", stack, FarmLayout.THRESHING_POS + Vector3(3.2, 0, -1.0))
 			player.set_bucket_water(1.0)
+			var barrel := ($Piles as Piles).spawn_barrel(FarmLayout.CART_POS + Vector3(1.8, 0, 2.2))
+			barrel.goods.add(&"turnip", 5, 1)
 			for i in field.plots.size():
 				var s := field.plots[i].state
 				if i >= 8:

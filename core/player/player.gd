@@ -47,6 +47,8 @@ var dev_walk_seconds: float = 0.0
 ## What's in your arms: one kind of bulky item, one quality per unit.
 var carry_id: StringName = &""
 var carry_units: Array[int] = []
+## A carried barrel's contents (an Inventory dict), when carry_id is &"barrel".
+var carry_payload: Dictionary = {}
 ## The handcart you're pulling, if any.
 var pulling: Node3D = null   ## Dev runs: walk forward on our own for this long.
 
@@ -143,13 +145,27 @@ func take_carry() -> Array[int]:
 	var units := carry_units.duplicate()
 	carry_units.clear()
 	carry_id = &""
+	carry_payload = {}
 	_carry_updated()
 	return units
+
+
+## Lifts a barrel (with what's in it) into your arms.
+func carry_barrel(contents: Dictionary) -> void:
+	carry_id = &"barrel"
+	carry_units = [0]
+	carry_payload = contents
+	_carry_updated()
 
 
 func carry_text() -> String:
 	if not is_carrying():
 		return ""
+	if carry_id == &"barrel":
+		var n := 0
+		for k: String in carry_payload:
+			n += int(carry_payload[k])
+		return "a barrel (%d inside)" % n
 	return "%d %s" % [carry_count(), Items.name_of(carry_id).to_lower() + ("s" if carry_count() > 1 and not carry_id.ends_with("y") else "")]
 
 
@@ -192,6 +208,12 @@ func set_down() -> void:
 	at.y = Terrain.height_at(at.x, at.z)
 	var piles := get_tree().get_first_node_in_group("piles")
 	if piles == null:
+		return
+	if carry_id == &"barrel":
+		var contents := carry_payload
+		take_carry()
+		piles.spawn_barrel(at, contents)
+		Sfx.play_at("thump", at, -4.0)
 		return
 	var id := carry_id
 	var units := take_carry()
@@ -392,10 +414,12 @@ func _physics_process(delta: float) -> void:
 		dev_walk_seconds -= delta
 		input = Vector2(0, -1)
 		if dev_walk_seconds <= 0.0:
-			print("DEV walked to ", global_position)
+			print("DEV walked to ", global_position, "  pulling=", pulling != null)
 	var speed := (RUN_SPEED if running else WALK_SPEED) * needs.speed_factor()
 	if pulling:
 		speed *= 0.8
+	elif carry_id == &"barrel":
+		speed *= 0.7 if not carry_payload.is_empty() else 0.9
 	elif is_carrying():
 		speed *= 0.9
 	var dir := (transform.basis * Vector3(input.x, 0, input.y)).normalized()
@@ -455,7 +479,7 @@ func to_dict() -> Dictionary:
 		"pos": [global_position.x, global_position.y, global_position.z], "yaw": rotation.y,
 		"needs": needs.to_dict(), "gold": wallet.gold, "inventory": inventory.to_dict(),
 		"tool_state": tool_state, "hotbar": hotbar,
-		"carry_id": String(carry_id), "carry_units": carry_units,
+		"carry_id": String(carry_id), "carry_units": carry_units, "carry_payload": carry_payload,
 	}
 
 
@@ -473,6 +497,7 @@ func from_dict(d: Dictionary) -> void:
 		carry_units.append(int(q))
 	if carry_units.is_empty():
 		carry_id = &""
+	carry_payload = d.get("carry_payload", {})
 	viewmodel.set_carry(carry_id, carry_units.size())
 	if d.has("hotbar"):
 		for i in mini(HOTBAR_SIZE, d.hotbar.size()):

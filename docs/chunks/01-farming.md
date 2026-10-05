@@ -151,6 +151,26 @@ field of plots, a threshing floor, a tool stall (buy seeds, tools, bread) and a 
 - **Crop health:** a plot shows its health and what hurt it overnight (dry soil, weeds, caterpillars,
   waterlogging, left too long).
 
+## Playtest 4 feedback (fixed)
+
+- **Pack:** works like Minecraft.
+  - Drag to move between the pack and the hotbar.
+  - Clicking selects an item and shows its details and actions (Eat, put on or take off the hotbar);
+    shift-click quick-moves.
+  - Clicks act on release, so they never break a drag.
+  - Panels refresh in place, so the cursor no longer jumps.
+- **Icons:** framed from the model's real on-screen outline (the sickle is centred).
+- **Sheaves:** set down, they lie flat in a stacked pile instead of standing on end.
+- **Barrels:** buy one at the stall; it's set down beside it.
+  - Fill it with E while carrying; E opens a window to take an armful or lift the barrel.
+  - Carry it (contents and all, more slowly when full), set it down anywhere, or stand up to 3 in the
+    handcart.
+  - The buyer sells from barrels on a nearby cart or standing nearby.
+- **Handcart:**
+  - While pulling, both fists visibly grip the shafts' handle ends.
+  - When the cart snags, it holds you back with a jolt and a message. You never silently let go;
+    E releases it.
+
 ## Not verified yet (needs Tyler's hands)
 
 Every mini-game is exercised by tests and screenshots, but none of them has had a real mouse click.

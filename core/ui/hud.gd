@@ -358,11 +358,22 @@ func is_panel_open() -> bool:
 	return _panel != null
 
 
+## Opens a panel, or rebuilds the open one in place (same kind) without touching the mouse,
+## so clicking inside a panel never makes the cursor jump.
 func _open_panel(kind: String, title: String, width: float = 620.0) -> VBoxContainer:
-	close_panel()
+	var reuse := _panel != null and _panel_kind == kind
+	if reuse:
+		for c in _panel.get_children():
+			_panel.remove_child(c)
+			c.queue_free()
+	else:
+		close_panel()
+		_panel = PanelContainer.new()
+		_root.add_child(_panel)
+		player.ui_open = true
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		Sfx.play("ui_open", -6.0, 0.0)
 	_panel_kind = kind
-	_panel = PanelContainer.new()
-	_root.add_child(_panel)
 	var outer := VBoxContainer.new()
 	outer.add_theme_constant_override("separation", 10)
 	_panel.add_child(outer)
@@ -379,21 +390,21 @@ func _open_panel(kind: String, title: String, width: float = 620.0) -> VBoxConta
 	v.add_theme_constant_override("separation", 8)
 	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(v)
-	player.ui_open = true
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	Sfx.play("ui_open", -6.0, 0.0)
-	_fit_panel.call_deferred(scroll, v)
+	_fit_panel.call_deferred(scroll, v, reuse)
 	return v
 
 
 ## Sizes the panel to its contents (scrolling past 540 px) and centres it.
-func _fit_panel(scroll: ScrollContainer, content: Control) -> void:
+func _fit_panel(scroll: ScrollContainer, content: Control, keep_top: bool = false) -> void:
 	await get_tree().process_frame   # let wrapped labels settle their heights first
 	if _panel == null or not is_instance_valid(scroll):
 		return
+	var top := _panel.position.y
 	scroll.custom_minimum_size.y = minf(content.get_combined_minimum_size().y, 540.0)
 	_panel.reset_size()
 	_panel.position = (_root.size - _panel.size) / 2.0
+	if keep_top:   # a refresh: don't let the panel hop up and down under the cursor
+		_panel.position.y = top
 
 
 func close_panel() -> void:
@@ -473,7 +484,7 @@ var _pack_selected: StringName = &""
 ## or double-click food to eat it.
 func open_inventory() -> void:
 	var v := _open_panel("inventory", "Your pack", 640.0)
-	v.add_child(_label("Drag tools and seed onto your hotbar (or click one, then a slot). Right-click a slot to empty it. Double-click or right-click food to eat.", 15, DIM))
+	v.add_child(_label("Drag tools and seed onto your hotbar slots, or drag a slot back into the pack to empty it. Click anything to see what it is. Shift-click moves it to or from the hotbar.", 15, DIM))
 	var grid := GridContainer.new()
 	grid.columns = 8
 	grid.add_theme_constant_override("h_separation", 6)
@@ -513,7 +524,7 @@ func open_inventory() -> void:
 		grid.add_child(tile)
 	if stacks.is_empty():
 		v.add_child(_label("Empty."))
-	v.add_child(_label("Hotbar  (keys 1–9; slot 1 is always your hands)", 17, ACCENT))
+	v.add_child(_label("Hotbar  (keys 1–9; slot 1 is always your hands). Drag to arrange.", 17, ACCENT))
 	var bar := HBoxContainer.new()
 	bar.add_theme_constant_override("separation", 6)
 	v.add_child(bar)
@@ -532,13 +543,36 @@ func open_inventory() -> void:
 		tile.pressed.connect(_on_hotbar_tile)
 		tile.dropped.connect(_on_drop_on_slot)
 		bar.add_child(tile)
-	var info := ""
-	if _pack_selected != &"" and Items.item(_pack_selected):
-		var it := Items.item(_pack_selected)
-		info = "%s: %s" % [it.display_name, it.description]
+	# Details of the selected item, with what you can do with it.
+	var info := VBoxContainer.new()
+	info.custom_minimum_size = Vector2(0, 74)   # fixed height: the panel doesn't jump as you click
+	v.add_child(info)
+	var it := Items.item(_pack_selected) if _pack_selected != &"" else null
+	if it and player.inventory.has(_pack_selected):
+		var q_text := Items.name_of(_pack_selected, player.inventory.qualities_of(_pack_selected).back()) if it.has_quality else it.display_name
+		info.add_child(_label("%s  ×%d" % [q_text, player.inventory.count(_pack_selected)], 18, ACCENT))
+		if it.description != "":
+			info.add_child(_label(it.description, 15, DIM))
+		var actions := HBoxContainer.new()
+		actions.add_theme_constant_override("separation", 8)
+		info.add_child(actions)
+		var id := _pack_selected
+		if it.food_value > 0.0:
+			_action_button(actions, "Eat (+%d hunger)" % roundi(it.food_value), func() -> void:
+				player.eat(id, player.inventory.qualities_of(id).front())
+				_refresh_pack())
 		if it.hotbar:
-			info += "  (Click a hotbar slot to put it there.)"
-	v.add_child(_label(info, 16, INK))
+			if id in player.hotbar:
+				_action_button(actions, "Take off the hotbar", func() -> void:
+					player.clear_slot(player.hotbar.find(id))
+					_refresh_pack())
+			elif player.hotbar.find(&"") > 0:
+				_action_button(actions, "Put on the hotbar", func() -> void:
+					player.assign_slot(player.hotbar.find(&""), id)
+					_refresh_pack())
+	else:
+		_pack_selected = &""
+		info.add_child(_label("Click an item to see what it is.", 15, DIM))
 	_footer_button("Close  [Tab]")
 
 
@@ -547,26 +581,39 @@ func _refresh_pack() -> void:
 		open_inventory.call_deferred()
 
 
+func _action_button(parent: Control, text: String, action: Callable) -> void:
+	var b := Button.new()
+	b.text = text
+	b.focus_mode = Control.FOCUS_NONE
+	b.pressed.connect(action)
+	parent.add_child(b)
+
+
 func _on_pack_tile(tile: ItemTile, button: int, double: bool) -> void:
-	var it := Items.item(tile.id)
-	if it and it.food_value > 0.0 and (button == MOUSE_BUTTON_RIGHT or double):
-		player.eat(tile.id, tile.quality)
-		_refresh_pack()
+	if button != MOUSE_BUTTON_LEFT:
 		return
-	if button == MOUSE_BUTTON_LEFT:
-		_pack_selected = &"" if _pack_selected == tile.id else tile.id
-		Sfx.play("ui_click", -8.0, 0.0)
-		_refresh_pack()
+	var it := Items.item(tile.id)
+	if Input.is_key_pressed(KEY_SHIFT) and it and it.hotbar:
+		# Shift-click: quick-move onto (or off) the hotbar.
+		if tile.id in player.hotbar:
+			player.clear_slot(player.hotbar.find(tile.id))
+		elif player.hotbar.find(&"") > 0:
+			player.assign_slot(player.hotbar.find(&""), tile.id)
+	elif double and it and it.food_value > 0.0:
+		player.eat(tile.id, tile.quality)
+	else:
+		_pack_selected = tile.id
+	Sfx.play("ui_click", -8.0, 0.0)
+	_refresh_pack()
 
 
 func _on_hotbar_tile(tile: ItemTile, button: int, _double: bool) -> void:
-	if tile.slot <= 0:
+	if tile.slot <= 0 or button != MOUSE_BUTTON_LEFT or tile.id == &"":
 		return
-	if button == MOUSE_BUTTON_RIGHT:
+	if Input.is_key_pressed(KEY_SHIFT):
 		player.clear_slot(tile.slot)
-	elif _pack_selected != &"" and Items.item(_pack_selected) and Items.item(_pack_selected).hotbar:
-		player.assign_slot(tile.slot, _pack_selected)
-		_pack_selected = &""
+	else:
+		_pack_selected = tile.id
 	Sfx.play("ui_click", -8.0, 0.0)
 	_refresh_pack()
 
@@ -592,12 +639,18 @@ func open_guide() -> void:
 	_footer_button("Close  [G]")
 
 
+## A storage window (barrel, handcart): the same list, without the gold line.
+func open_container(title: String, rows: Callable) -> void:
+	open_trade(title, rows, false)
+
+
 ## A buy/sell list. `rows` returns an Array of {label, tooltip?, buttons: [{text, enabled, action}]};
 ## it's called again after every action so prices and counts stay current.
-func open_trade(title: String, rows: Callable) -> void:
+func open_trade(title: String, rows: Callable, show_gold: bool = true) -> void:
 	_trade_rows = rows
 	var v := _open_panel("trade", title)
-	v.add_child(_label("You have %d gold." % player.wallet.gold, FONT, ACCENT))
+	if show_gold:
+		v.add_child(_label("You have %d gold." % player.wallet.gold, FONT, ACCENT))
 	var list: Array = rows.call()
 	if list.is_empty():
 		v.add_child(_label("Nothing to trade."))
@@ -619,7 +672,8 @@ func open_trade(title: String, rows: Callable) -> void:
 			var action: Callable = btn.action
 			b.pressed.connect(func() -> void:
 				action.call()
-				open_trade(title, _trade_rows))
+				if _panel_kind == "trade":
+					open_trade(title, _trade_rows, show_gold))
 			row.add_child(b)
 		v.add_child(row)
 	_footer_button("Close  [Esc]")

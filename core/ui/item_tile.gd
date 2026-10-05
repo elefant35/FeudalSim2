@@ -104,10 +104,22 @@ func _on_icon_ready(icon_id: StringName) -> void:
 		_icon.texture = Icons.get_icon(id)
 
 
+var _press_at := Vector2.INF
+var _press_double := false
+
+
+## A click fires on release, and only if the mouse didn't move (moving starts a drag instead).
 func _gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed:
-		pressed.emit(self, event.button_index, event.double_click)
-		accept_event()
+	if not (event is InputEventMouseButton):
+		return
+	var mb := event as InputEventMouseButton
+	if mb.pressed:
+		_press_at = mb.position
+		_press_double = mb.double_click
+	elif _press_at != Vector2.INF and mb.position.distance_to(_press_at) < 6.0:
+		pressed.emit(self, mb.button_index, _press_double)
+		_press_at = Vector2.INF
+	accept_event()
 
 
 func _get_drag_data(_at: Vector2) -> Variant:

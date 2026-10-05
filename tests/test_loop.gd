@@ -396,3 +396,44 @@ func test_break_new_ground_anywhere() -> void:
 			found = q.state.till_progress == 1.0
 	check(found, "new plot restored with its state")
 	_finish(w2)
+
+
+func test_barrels_fill_carry_cart_and_sell() -> void:
+	var w := _world()
+	var player: Player = w.player
+	var piles: Piles = w.get_node("Piles")
+	var cart: HandCart = w.get_node("HandCart")
+	var stall: ToolStall = w.get_node("ToolStall")
+	player.wallet.add(20)
+	for row: Dictionary in stall._rows(player):
+		if row.label.begins_with("Barrel"):
+			row.buttons[0].action.call()
+	eq(piles.all_barrels().size(), 1, "a bought barrel is set down by the stall")
+	var barrel: Barrel = piles.all_barrels()[0]
+	for k in 8:
+		player.pick_up(&"turnip", 2)
+	barrel.interact(player)
+	eq(barrel.count(), 8, "filled from your arms")
+	eq(player.is_carrying(), false)
+	barrel.lift(player)
+	eq(player.carry_id, &"barrel", "lifted the barrel")
+	check(player.carry_text().contains("8 inside"), "contents came with it")
+	cart.interact(player)
+	eq(cart.barrels.size(), 1, "stood the barrel in the cart")
+	eq(player.is_carrying(), false)
+	# Sell straight from the barrel on the cart.
+	var buyer: ProduceBuyer = w.get_node("ProduceBuyer")
+	cart.global_position = buyer.global_position + Vector3(-3.5, 0, -2.0)
+	var before := player.wallet.gold
+	for row: Dictionary in buyer._rows(player):
+		if String(row.get("tooltip", "")).contains("barrel"):
+			row.buttons[1].action.call()
+	check(player.wallet.gold > before, "sold from the barrel on the cart")
+	eq(Barrel.total(cart.barrels[0]), 0, "barrel emptied")
+	# Lift it back out and set it down: it's a barrel again, not a pile.
+	cart._rows(player)[-1].buttons[0].action.call()
+	eq(player.carry_id, &"barrel")
+	player.target = null
+	player.set_down()
+	eq(piles.all_barrels().size(), 1, "set down as a barrel")
+	_finish(w)
