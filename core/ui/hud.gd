@@ -222,6 +222,7 @@ func _process(delta: float) -> void:
 	_gold_box.position = Vector2(vs.x - _gold_box.size.x - 16, 14)
 	_needs_box.reset_size()
 	_needs_box.position = Vector2(16, vs.y - _needs_box.size.y - 16)
+	_hotbar.visible = _panel == null
 	_hotbar.reset_size()
 	_hotbar.position = Vector2(maxf((vs.x - _hotbar.size.x) / 2.0, _needs_box.size.x + 32.0), vs.y - _hotbar.size.y - 16)
 	_overlay.queue_redraw()
@@ -391,11 +392,12 @@ func _open_panel(kind: String, title: String, width: float = 620.0) -> VBoxConta
 	return v
 
 
-## Sizes the panel to its contents (scrolling past 620 px) and centres it.
+## Sizes the panel to its contents (scrolling past 540 px) and centres it.
 func _fit_panel(scroll: ScrollContainer, content: Control) -> void:
-	if _panel == null:
+	await get_tree().process_frame   # let wrapped labels settle their heights first
+	if _panel == null or not is_instance_valid(scroll):
 		return
-	scroll.custom_minimum_size.y = minf(content.get_combined_minimum_size().y, 620.0)
+	scroll.custom_minimum_size.y = minf(content.get_combined_minimum_size().y, 540.0)
 	_panel.reset_size()
 	_panel.position = (_root.size - _panel.size) / 2.0
 
@@ -420,10 +422,11 @@ func _footer_button(text: String) -> void:
 	_panel.get_child(0).add_child(b)
 
 
-func _label(text: String, size: int = FONT, color: Color = INK) -> Label:
+func _label(text: String, size: int = FONT, color: Color = INK, wrap: bool = true) -> Label:
 	var l := Label.new()
 	l.text = text
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if wrap:   # never wrap a label inside a row: it collapses to one letter per line
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", color)
 	return l
@@ -434,13 +437,14 @@ func open_pause_menu() -> void:
 	get_tree().paused = true
 	var speeds := HBoxContainer.new()
 	speeds.add_theme_constant_override("separation", 8)
-	speeds.add_child(_label("Time speed:"))
+	speeds.add_child(_label("Time speed:", FONT, INK, false))
 	for i in Clock.SPEEDS.size():
 		var b := Button.new()
 		b.text = "  %d×  " % Clock.SPEEDS[i]
 		b.toggle_mode = true
 		b.button_pressed = Clock.speed_index == i
 		b.focus_mode = Control.FOCUS_NONE
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		b.pressed.connect(func() -> void:
 			Clock.speed_index = i
 			Clock.speed_changed.emit(Clock.speed())
