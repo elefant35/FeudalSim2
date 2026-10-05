@@ -254,6 +254,12 @@ ACTIONS = {
         (12, {"spine": (5, 0, 0), "upper_arm.R": (-45, 0, 15), "lower_arm.R": (-50, 0, 0), "upper_arm.L": (-45, 0, -15), "lower_arm.L": (-50, 0, 0)}),
         (24, {"spine": (10, 0, 0), "upper_arm.R": (-35, 0, 15), "lower_arm.R": (-55, 0, 0), "upper_arm.L": (-35, 0, -15), "lower_arm.L": (-55, 0, 0)}),
     ],
+    # Shooing crows: both arms waving over the head.
+    "shoo": [
+        (0, {"upper_arm.R": (-160, 0, -30), "upper_arm.L": (-160, 0, 30), "lower_arm.R": (-10, 0, 0), "lower_arm.L": (-10, 0, 0)}),
+        (6, {"upper_arm.R": (-120, 0, -55), "upper_arm.L": (-120, 0, 55), "lower_arm.R": (-30, 0, 0), "lower_arm.L": (-30, 0, 0), "chest": (-5, 0, 0)}),
+        (12, {"upper_arm.R": (-160, 0, -30), "upper_arm.L": (-160, 0, 30), "lower_arm.R": (-10, 0, 0), "lower_arm.L": (-10, 0, 0)}),
+    ],
     # Eating: hand to mouth.
     "eat": [
         (0, {"upper_arm.R": (-40, 0, -10), "lower_arm.R": (-120, 0, 0)}),

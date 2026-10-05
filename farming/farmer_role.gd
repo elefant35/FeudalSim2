@@ -52,11 +52,23 @@ func next_task() -> Task:
 	if npc.is_carrying():
 		var more := _gather_more_of(npc.carry_id) if npc.carry_space(npc.carry_id) > 0 else null
 		return more if more else _deliver()
-	for step: Callable in [_bind, _harvest, _reap, _thresh, _winnow, _fetch_piles, _market, _tend, _water, _sow, _till]:
+	for step: Callable in [_shoo, _bind, _harvest, _reap, _thresh, _winnow, _fetch_piles, _market, _tend, _water, _sow, _till]:
 		var t: Task = step.call()
 		if t:
 			return t
 	return null
+
+
+## Crows at the seed: hurry over waving and shouting. (They flee from anyone who comes close.)
+func _shoo() -> Task:
+	var crows := field.pecking_crows()
+	if crows.is_empty():
+		return null
+	var crow := crows[0]
+	return _job("Shooing crows", crow.global_position, &"shoo", 1.2, func() -> void:
+		if is_instance_valid(crow) and crow.state == Crow.State.PECKING:
+			crow.flee()
+		npc.say("Go on, get off it!"), &"", 3.5)
 
 
 ## With room in the arms, keep picking the same thing before carrying it off.

@@ -290,7 +290,7 @@ func dev_scenario(scenario: String) -> void:
 		"workshow":
 			# Every work animation on a real villager, with the right tool in hand.
 			var jobs := [[&"walk", &""], [&"carry", &""], [&"hoe", &"hoe"], [&"sow", &"seed_pouch"], [&"pour", &"bucket"],
-				[&"crank", &""], [&"crouch", &""], [&"reap", &"sickle"], [&"flail", &"flail"], [&"winnow", &"winnowing_basket"]]
+				[&"crank", &""], [&"shoo", &""], [&"crouch", &""], [&"reap", &"sickle"], [&"flail", &"flail"], [&"winnow", &"winnowing_basket"]]
 			for i in jobs.size():
 				var v := Npc.new()
 				v.name = "Show%d" % i

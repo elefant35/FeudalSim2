@@ -178,6 +178,15 @@ func _on_minutes(minutes: float) -> void:
 			add_child(crow)
 
 
+## Crows on the ground eating this field's seed.
+func pecking_crows() -> Array[Crow]:
+	var out: Array[Crow] = []
+	for c in get_children():
+		if c is Crow and c.state == Crow.State.PECKING:
+			out.append(c)
+	return out
+
+
 func _has_crow(p: FarmPlot) -> bool:
 	for c in get_children():
 		if c is Crow and c.plot == p:

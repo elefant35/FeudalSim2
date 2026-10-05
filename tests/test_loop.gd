@@ -583,3 +583,36 @@ func test_a_market_trip_cut_short_lets_go_of_the_cart() -> void:
 	eq(cart.is_pulled(), false)
 	check(wynn._think() != null, "ready to work again")
 	_finish(w)
+
+
+func test_crows_flee_wynn_and_he_shoos_them() -> void:
+	var w := _world()
+	var wynn: Npc = w.get_node("Wynn")
+	var field: Field = w.get_node("WynnField")
+	wynn.instant = true
+	var plot := field.plots[0]
+	while not plot.state.is_tilled():
+		plot.state.till(1.0)
+	plot.state.sow(Items.crop(&"barley"), Vector2(0.5, 0.5))
+	var crow := Crow.new()
+	crow.plot = plot
+	field.add_child(crow)
+	crow.state = Crow.State.PECKING
+	crow.global_position = plot.to_world(Vector2(0.5, 0.5), 0.08)
+	# He notices and goes after it before anything else.
+	var t: Task = wynn.role.next_task()
+	eq(t.label, "Shooing crows", "drops everything for the crows")
+	t.start(wynn)
+	while not t.update(wynn, 0.1):
+		pass
+	eq(crow.state, Crow.State.LEAVING, "the crow flies off")
+	# And a crow flies off on its own when a villager simply walks up.
+	var crow2 := Crow.new()
+	crow2.plot = plot
+	field.add_child(crow2)
+	crow2.state = Crow.State.PECKING
+	crow2.global_position = plot.to_world(Vector2(0.3, 0.3), 0.08)
+	wynn.global_position = crow2.global_position + Vector3(2.0, 0, 0)
+	crow2._process(0.1)
+	eq(crow2.state, Crow.State.LEAVING, "crows fear villagers too")
+	_finish(w)
