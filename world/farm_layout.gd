@@ -38,6 +38,19 @@ static func build(world: Node3D) -> void:
 	_scatter_nature(world)
 
 
+## Why the ground at `pos` can't be dug for a plot (paths, the lane, the threshing floor), or "".
+static func no_dig_reason(pos: Vector3) -> String:
+	if absf(pos.z - LANE_Z) < 3.3:
+		return "Not on the lane."
+	if pos.x > -11.4 and pos.x < -1.4 and absf(pos.z - (-3.0)) < 2.0:
+		return "Not on the path to the house."
+	if Vector2(pos.x - THRESHING_POS.x, pos.z - THRESHING_POS.z).length() < 4.4:
+		return "Too close to the threshing floor."
+	if Vector2(pos.x, pos.z).length() > 60.0:
+		return "That's too far from the farm."
+	return ""
+
+
 ## Places a model on the ground at (x, z).
 static func place(parent: Node3D, id: StringName, x: float, z: float, yaw: float = 0.0, scale: float = 1.0) -> Node3D:
 	var n := Models.make(id)

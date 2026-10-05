@@ -75,7 +75,7 @@ static func next_step(player: Player, field: Field, floor_: ThreshingFloor) -> S
 	if player.seed_kinds().is_empty() and tilled_empty > 0:
 		return "Buy seed at Tools & Seed. Check the field guide (G) for what grows this season."
 	if growing == 0:
-		return "Till a plot with your hoe."
+		return "Till a plot in the garden with your hoe, or aim the hoe at open grass to break new ground."
 	if Clock.hour() >= 18.0:
 		return "Your crops are tended. Sleep in your bed to start a new day."
 	return "Tend your crops: pull weeds, pick off pests, keep the soil moist. Till more plots if you like."
@@ -86,7 +86,7 @@ static func sections() -> Array:
 	return [
 		["This season: %s" % season, _sowable_now()],
 		["The working year",
-			"Till → sow → water → tend → harvest → sell. Each season lasts 6 days. Crops that grow through two seasons (or over winter) pay best."],
+			"Till → sow → water → tend → harvest → sell. Aim your hoe at open grass to break a new plot anywhere (the green outline shows where it'll go). Each season lasts 6 days. Crops that grow through two seasons (or over winter) pay best."],
 		["Root crops: turnips and cabbage",
 			"Pull them by hand when ripe (hold left click), then sell them at the Produce Bought cart or eat them. Turnips: spring to autumn, ~3 days, survive frost. Cabbage: spring or summer, ~5 days; pick caterpillars off the leaves."],
 		["Grain: barley and wheat",

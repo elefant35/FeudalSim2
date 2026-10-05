@@ -300,3 +300,27 @@ func test_next_step_walks_through_the_grain_chain() -> void:
 	check(FarmGuide.next_step(player, field, tf).contains("winnowing basket"), "chaff → winnow")
 	check(FarmGuide.sections().size() >= 5, "guide has sections")
 	_finish(w)
+
+
+func test_break_new_ground_anywhere() -> void:
+	var w := _world()
+	var field: Field = w.get_node("Field")
+	eq(field.plots.size(), Field.STARTER_COUNT, "a few starter plots")
+	var spot := field.snap(Vector3(20.2, 0, -10.1))
+	eq(field.placement_error(spot), "", "open grass east of the garden is diggable")
+	var p := field.add_plot(spot)
+	check(field.placement_error(spot + Vector3(1.0, 0, 0)) != "", "can't overlap a plot")
+	check(field.placement_error(field.snap(Vector3(0, 0, FarmLayout.LANE_Z))) != "", "not on the lane")
+	p.state.till(1.0)
+	var d: Dictionary = JSON.parse_string(JSON.stringify(field.to_dict()))
+	_finish(w)
+	var w2 := _world()
+	var f2: Field = w2.get_node("Field")
+	f2.from_dict(d)
+	eq(f2.plots.size(), Field.STARTER_COUNT + 1, "plots recreated on load")
+	var found := false
+	for q in f2.plots:
+		if q.global_position.distance_to(spot) < 0.01:
+			found = q.state.till_progress == 1.0
+	check(found, "new plot restored with its state")
+	_finish(w2)

@@ -197,7 +197,7 @@ func save_game() -> void:
 	if DevTools.no_save():
 		return
 	var data := {
-		"version": 1, "clock": Clock.to_dict(), "player": player.to_dict(),
+		"version": 2, "clock": Clock.to_dict(), "player": player.to_dict(),
 		"world": {},
 	}
 	for n in get_tree().get_nodes_in_group("saveable"):
@@ -211,8 +211,8 @@ func load_game() -> bool:
 	if not FileAccess.file_exists(SAVE_PATH):
 		return false
 	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(SAVE_PATH))
-	if typeof(data) != TYPE_DICTIONARY or int(data.get("version", 0)) != 1:
-		push_warning("Save file unreadable; starting fresh.")
+	if typeof(data) != TYPE_DICTIONARY or int(data.get("version", 0)) != 2:
+		push_warning("Save file is from an older version or unreadable; starting fresh.")
 		return false
 	Clock.from_dict(data.clock)
 	player.from_dict(data.player)
@@ -236,6 +236,8 @@ func new_game() -> void:
 func dev_scenario(scenario: String) -> void:
 	var field: Field = get_tree().get_first_node_in_group("field")
 	var crops := ["turnip", "cabbage", "barley", "wheat"]
+	if scenario in ["grown", "sandbox"]:
+		field.fill_garden()
 	match scenario:
 		"grown":
 			# Every plot in a different state, for looking at the art.

@@ -28,8 +28,9 @@ It's the first morning of spring. You have a cottage, a fenced field of twelve p
 turnip seed, a small store of food (five loaves, four turnips) and 12 gold. Everything else you earn.
 
 **Your first days**
-1. Walk to the field (east of the house). With the **hoe** in hand, look at a plot and click. A marker
-   swings along a bar; click when it's in the green. Fresh sod takes a few good strikes.
+1. Walk to the garden (east of the house); four beds are already dug from last year. With the **hoe** in
+   hand, look at a bed and click. To make more plots anywhere, aim the hoe at open grass: a green outline
+   shows where the new plot will go (red means it won't fit). A marker swings along a bar; click when it's in the green. Fresh sod takes a few good strikes.
 2. Select your **turnip seed** and click to throw handfuls onto the tilled plot. The little 3×3 map shows
    your cover. Aim for every square green; bare squares grow nothing and orange ones are overcrowded.
    About four well-placed handfuls cover a plot.
