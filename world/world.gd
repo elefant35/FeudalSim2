@@ -32,6 +32,8 @@ func _ready() -> void:
 	Clock.minutes_passed.connect(_on_minutes_passed)
 	Clock.day_started.connect(_on_day_started)
 	FarmLayout.build(self)
+	if OS.get_environment("FEUDALSIM_TEST") != "1":
+		NavBaker.bake(self)
 	hud.objective = _objective
 	hud.guide_sections = FarmGuide.sections
 	if DevTools.no_save() or not load_game():
@@ -269,6 +271,19 @@ func dev_scenario(scenario: String) -> void:
 				if c.gets_caterpillars:
 					s.caterpillars[2] = 2
 				field.plots[i].refresh()
+		"npc":
+			# A villager strolling around the farmyard, with the navigation mesh shown.
+			var v := Npc.new()
+			v.name = "Wynn"
+			v.display_name = "Wynn"
+			v.role = WanderRole.new()
+			v.home = Vector3(-6, 0, 0)
+			v.bed = Vector3(-6, 0, 0)
+			v.tint = {"tunic": Color(0.3, 0.42, 0.28)}
+			add_child(v)
+			v.global_position = Vector3(-6, 0, 0)
+			NavigationServer3D.set_debug_enabled(true)
+			get_tree().debug_navigation_hint = true
 		"villagers":
 			# Rig check: a row of villagers each playing one animation, the hoe in a right hand.
 			var anims := ["idle", "walk", "hoe", "carry", "pull"]

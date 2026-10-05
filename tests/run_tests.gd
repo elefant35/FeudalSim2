@@ -4,6 +4,7 @@ extends SceneTree
 
 func _initialize() -> void:
 	OS.set_environment("FEUDALSIM_NOSAVE", "1")   # never touch the player's real save
+	OS.set_environment("FEUDALSIM_TEST", "1")     # no navigation baking threads in tests
 	# Let autoloads finish _ready before testing.
 	process_frame.connect(_run, CONNECT_ONE_SHOT)
 

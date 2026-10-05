@@ -9,6 +9,7 @@ signal message(text: String)
 signal carry_changed
 
 const POCKET_MAX := 6           ## Produce the pack can hold, for eating on the go.
+const STEP_HEIGHT := 0.32       ## Ledges this high (door sills, plot edges) are walked over.
 
 var display_name: String = "Someone"
 ## Whose things are whose: carts, barrels and the buyer's lists go by this.
@@ -24,6 +25,8 @@ var carry_payload: Dictionary = {}
 ## The handcart being pulled, if any.
 var pulling: Node3D = null
 
+var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
+
 
 func _ready() -> void:
 	needs.name = "Needs"
@@ -31,6 +34,34 @@ func _ready() -> void:
 	inventory.name = "Inventory"
 	for c: Node in [needs, wallet, inventory]:
 		add_child(c)
+	_build_body()
+
+
+## A person-sized body: a capsule riding on a short downward foot ray, so small lips are
+## stepped over rather than blocking.
+func _build_body() -> void:
+	# The body rides on a short downward "foot" ray: the capsule sits STEP_HEIGHT off the
+	# ground, so door sills, plot edges and other small lips are simply walked over.
+	var shape := CollisionShape3D.new()
+	var capsule := CapsuleShape3D.new()
+	capsule.radius = 0.3
+	capsule.height = 1.75 - STEP_HEIGHT
+	shape.shape = capsule
+	shape.position.y = STEP_HEIGHT + capsule.height / 2.0
+	add_child(shape)
+	var foot := CollisionShape3D.new()
+	var ray_shape := SeparationRayShape3D.new()
+	ray_shape.length = STEP_HEIGHT + 0.05
+	foot.shape = ray_shape
+	foot.position.y = STEP_HEIGHT + 0.05
+	foot.rotation.x = PI / 2   # the ray casts along +Z; this points it straight down
+	add_child(foot)
+	floor_snap_length = STEP_HEIGHT + 0.1
+
+
+func _fall(delta: float) -> void:
+	if not is_on_floor():
+		velocity.y -= _gravity * delta
 
 
 ## A line of feedback (the player's HUD shows its own; NPCs can show theirs above their head).

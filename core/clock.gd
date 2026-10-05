@@ -5,6 +5,7 @@ extends Node
 signal minutes_passed(minutes: float)   ## Awake time passing (not emitted while sleeping).
 signal day_started(day: int)            ## Emitted at midnight for each new day.
 signal speed_changed(speed: int)
+signal skipped(hours: float)            ## The clock jumped ahead (the player slept).
 
 const REAL_SECONDS_PER_DAY := 900.0
 const MINUTES_PER_DAY := 1440.0
@@ -49,9 +50,10 @@ func skip_to_hour(hour: float) -> float:
 	var target := day() * MINUTES_PER_DAY + hour * 60.0
 	if target <= total_minutes:
 		target += MINUTES_PER_DAY
-	var skipped := target - total_minutes
-	advance(skipped, false)
-	return skipped / 60.0
+	var gap := target - total_minutes
+	advance(gap, false)
+	skipped.emit(gap / 60.0)
+	return gap / 60.0
 
 
 func _start_day(d: int) -> void:

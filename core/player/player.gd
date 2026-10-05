@@ -14,7 +14,6 @@ const RUN_SPEED := 5.6
 const JUMP_VELOCITY := 4.2
 const MOUSE_SENSITIVITY := 0.0022
 const REACH := 3.2
-const STEP_HEIGHT := 0.32
 const EYE_HEIGHT := 1.6
 const HANDS := &"hands"
 const CARRYING := &"carrying"   ## held() while your arms are full of produce.
@@ -40,7 +39,6 @@ var tool_state: Dictionary = {}
 var dev_walk_seconds: float = 0.0   ## Dev runs: walk forward on our own for this long.
 ## The handcart you're pulling, if any.
 
-var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _step_distance: float = 0.0
 
 
@@ -50,23 +48,6 @@ func _ready() -> void:
 	display_name = "You"
 	add_to_group("player")
 	super()
-	# The body rides on a short downward "foot" ray: the capsule sits STEP_HEIGHT off the
-	# ground, so door sills, plot edges and other small lips are simply walked over.
-	var shape := CollisionShape3D.new()
-	var capsule := CapsuleShape3D.new()
-	capsule.radius = 0.3
-	capsule.height = 1.75 - STEP_HEIGHT
-	shape.shape = capsule
-	shape.position.y = STEP_HEIGHT + capsule.height / 2.0
-	add_child(shape)
-	var foot := CollisionShape3D.new()
-	var ray_shape := SeparationRayShape3D.new()
-	ray_shape.length = STEP_HEIGHT + 0.05
-	foot.shape = ray_shape
-	foot.position.y = STEP_HEIGHT + 0.05
-	foot.rotation.x = PI / 2   # the ray casts along +Z; this points it straight down
-	add_child(foot)
-	floor_snap_length = STEP_HEIGHT + 0.1
 	head.position.y = EYE_HEIGHT
 	add_child(head)
 	camera.fov = 72.0
