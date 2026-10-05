@@ -284,6 +284,19 @@ func dev_scenario(scenario: String) -> void:
 			v.global_position = Vector3(-6, 0, 0)
 			NavigationServer3D.set_debug_enabled(true)
 			get_tree().debug_navigation_hint = true
+		"workshow":
+			# Every work animation on a real villager, with the right tool in hand.
+			var jobs := [[&"walk", &""], [&"carry", &""], [&"hoe", &"hoe"], [&"sow", &"seed_pouch"], [&"pour", &"bucket"],
+				[&"crank", &""], [&"crouch", &""], [&"reap", &"sickle"], [&"flail", &"flail"], [&"winnow", &"winnowing_basket"]]
+			for i in jobs.size():
+				var v := Npc.new()
+				v.name = "Show%d" % i
+				v.role = PoseRole.new(jobs[i][0], jobs[i][1])
+				v.home = Vector3(0.0 + i * 1.7, 0, -12.5)
+				v.bed = v.home
+				add_child(v)
+				v.global_position = v.home
+				v.rotation.y = PI / 2   # side-on to a camera south of the row: all face left (west)
 		"villagers":
 			# Rig check: a row of villagers each playing one animation, the hoe in a right hand.
 			var anims := ["idle", "walk", "hoe", "carry", "pull"]

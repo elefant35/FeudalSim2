@@ -249,7 +249,7 @@ func _water() -> Task:
 		if p.state.has_crop() and p.state.moisture < WATER_BELOW:
 			if water <= 0.0:
 				return _job("Drawing water", well.global_position, &"crank", 4.0,
-					func() -> void: water = 1.0, &"bucket", 1.7)
+					func() -> void: water = 1.0, &"", 1.7)
 			return _job("Watering", p.global_position, &"pour", 2.5, func() -> void:
 				p.state.water(0.85)
 				water -= 0.34

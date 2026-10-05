@@ -8,7 +8,7 @@ const WALK_SPEED := 1.5
 ## How each tool sits in the villager's right hand (rotation in degrees, offset in metres).
 const TOOL_GRIP := {
 	&"default": [Vector3(-90, 0, 0), Vector3(0, -0.06, 0.02)],
-	&"bucket": [Vector3(0, 0, 0), Vector3(0, -0.05, 0)],
+	&"bucket": [Vector3(180, 0, 0), Vector3(0, 0.05, 0)],   # hangs below the fist
 }
 
 var role: Role
@@ -85,6 +85,8 @@ func _physics_process(delta: float) -> void:
 	if _task == null:
 		_task = _think()
 		if _task:
+			if OS.has_environment("FS_NPC_LOG"):
+				print("NPC %s %s: %s" % [name, Clock.time_string(), _task.label])
 			_task.start(self)
 	elif _task.update(self, delta):
 		_task = null
@@ -217,7 +219,8 @@ func _animate() -> void:
 		want = &"idle"
 	if _anim.current_animation != String(want):
 		_anim.play(want, 0.2)
-	_anim.speed_scale = horiz / 1.4 if horiz > 0.2 and _action == &"" else float(Clock.speed())
+	# One walk cycle covers about 1.7 m (two strides), so this keeps the feet from sliding.
+	_anim.speed_scale = horiz / 1.7 if horiz > 0.2 and _action == &"" else float(Clock.speed())
 
 
 func lie_down() -> void:

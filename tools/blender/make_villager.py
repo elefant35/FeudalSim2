@@ -145,11 +145,14 @@ def build_armature():
 
 
 # --- Animations ------------------------------------------------------------------------------
-# Rotations are bone-local degrees. For the limbs (bones pointing down), +X swings the limb
-# backwards and -X forwards/up; for the spine bones, +X bends forward. Verified in Godot (the
-# hoe's frame-10 key raises the arms overhead); if the sign is ever wrong, flip SWING.
+# Pose tables are written in one readable convention: for every bone, NEGATIVE X swings it
+# FORWARD (arms reach forward/up, thighs step forward), positive X swings it back (knees and
+# elbows bend with -X on the forearm/+X on the shin... see the tables); for the spine, positive
+# X bends the body forward. Blender's actual bone axes are the other way round (a bone pointing
+# down with roll 0 has its local Z facing forward, so +X rotation swings it forward), so every X
+# is multiplied by SWING = -1 when keyed. Checked side-on in Godot (the "workshow" dev scenario).
 
-SWING = 1.0
+SWING = -1.0
 
 
 def P(**bones):
@@ -170,6 +173,12 @@ def walk_cycle(arm_swing=35, leg_swing=30, carry=False):
         (24, dict(arms_a, **{"thigh.R": (-l, 0, 0), "thigh.L": (l, 0, 0), "shin.R": (5, 0, 0), "shin.L": (25, 0, 0), "hips_z": 0.0})),
     ]
 
+
+# Crouching low at the soil: knees bent, back bent, hips dropped.
+CROUCH = {"spine": (35, 0, 0), "chest": (15, 0, 0), "head": (-15, 0, 0), "thigh.R": (-75, 0, 0), "thigh.L": (-70, 0, 0),
+          "shin.R": (100, 0, 0), "shin.L": (95, 0, 0), "foot.R": (-25, 0, 0), "foot.L": (-25, 0, 0), "hips_z": -0.38}
+# Stooped over standing crops.
+STOOP = {"spine": (35, 0, 0), "head": (-15, 0, 0), "thigh.R": (-20, 0, 0), "thigh.L": (-15, 0, 0), "shin.R": (25, 0, 0), "shin.L": (20, 0, 0), "hips_z": -0.08}
 
 # Two-handed tool held across the body: right hand low on the handle, left hand above it.
 HOLD_HIGH = {"upper_arm.R": (-30, 0, -10), "lower_arm.R": (-70, 0, 0), "upper_arm.L": (-50, 0, 25), "lower_arm.L": (-60, 0, 0)}
@@ -196,6 +205,60 @@ ACTIONS = {
         (10, {"spine": (-5, 0, 0), "upper_arm.R": (-150, 0, -15), "lower_arm.R": (-40, 0, 0), "upper_arm.L": (-160, 0, 15), "lower_arm.L": (-30, 0, 0)}),
         (16, {"spine": (30, 0, 0), "chest": (10, 0, 0), "upper_arm.R": (-55, 0, -8), "lower_arm.R": (-15, 0, 0), "upper_arm.L": (-65, 0, 12), "lower_arm.L": (-10, 0, 0)}),
         (24, dict(HOLD_HIGH, spine=(5, 0, 0))),
+    ],
+    # Crouched at the soil: weeding, pulling roots, binding, picking. Hands work at the ground.
+    "crouch": [
+        (0, dict(CROUCH, **{"upper_arm.R": (-55, 0, 0), "upper_arm.L": (-50, 0, 0), "lower_arm.R": (-20, 0, 0), "lower_arm.L": (-25, 0, 0)})),
+        (12, dict(CROUCH, **{"upper_arm.R": (-40, 0, 0), "upper_arm.L": (-62, 0, 0), "lower_arm.R": (-35, 0, 0), "lower_arm.L": (-15, 0, 0)})),
+        (24, dict(CROUCH, **{"upper_arm.R": (-55, 0, 0), "upper_arm.L": (-50, 0, 0), "lower_arm.R": (-20, 0, 0), "lower_arm.L": (-25, 0, 0)})),
+    ],
+    # Broadcast sowing: the pouch held at the waist, the right hand flinging seed in an arc.
+    "sow": [
+        (0, {"upper_arm.L": (-35, 0, 10), "lower_arm.L": (-75, 0, 0), "upper_arm.R": (15, 0, 0), "lower_arm.R": (-30, 0, 0), "chest": (0, 12, 0)}),
+        (8, {"upper_arm.L": (-35, 0, 10), "lower_arm.L": (-75, 0, 0), "upper_arm.R": (-60, 0, -20), "lower_arm.R": (-50, 0, 0), "chest": (0, 0, 0)}),
+        (14, {"upper_arm.L": (-35, 0, 10), "lower_arm.L": (-75, 0, 0), "upper_arm.R": (-85, 0, -55), "lower_arm.R": (-5, 0, 0), "chest": (0, -14, 0)}),
+        (24, {"upper_arm.L": (-35, 0, 10), "lower_arm.L": (-75, 0, 0), "upper_arm.R": (15, 0, 0), "lower_arm.R": (-30, 0, 0), "chest": (0, 12, 0)}),
+    ],
+    # Pouring the bucket over a bed.
+    "pour": [
+        (0, {"spine": (15, 0, 0), "upper_arm.R": (-55, 0, -10), "lower_arm.R": (-25, 0, 0), "upper_arm.L": (-40, 0, 20), "lower_arm.L": (-60, 0, 0)}),
+        (24, {"spine": (18, 0, 0), "upper_arm.R": (-62, 0, -10), "lower_arm.R": (-20, 0, 0), "upper_arm.L": (-42, 0, 20), "lower_arm.L": (-60, 0, 0)}),
+        (48, {"spine": (15, 0, 0), "upper_arm.R": (-55, 0, -10), "lower_arm.R": (-25, 0, 0), "upper_arm.L": (-40, 0, 20), "lower_arm.L": (-60, 0, 0)}),
+    ],
+    # Winding the well's crank: the right hand goes round.
+    "crank": [
+        (0, {"spine": (8, 0, 0), "upper_arm.R": (-45, 0, -5), "lower_arm.R": (-50, 0, 0)}),
+        (6, {"spine": (10, 0, 0), "upper_arm.R": (-70, 0, -5), "lower_arm.R": (-35, 0, 0)}),
+        (12, {"spine": (8, 0, 0), "upper_arm.R": (-75, 0, -5), "lower_arm.R": (-70, 0, 0)}),
+        (18, {"spine": (6, 0, 0), "upper_arm.R": (-50, 0, -5), "lower_arm.R": (-85, 0, 0)}),
+        (24, {"spine": (8, 0, 0), "upper_arm.R": (-45, 0, -5), "lower_arm.R": (-50, 0, 0)}),
+    ],
+    # Reaping: bent over the grain, the sickle sweeping right to left.
+    "reap": [
+        (0, dict(STOOP, **{"chest": (10, 30, 0), "upper_arm.R": (-60, 0, -40), "lower_arm.R": (-20, 0, 0), "upper_arm.L": (-55, 0, 10), "lower_arm.L": (-30, 0, 0)})),
+        (10, dict(STOOP, **{"chest": (10, -30, 0), "upper_arm.R": (-75, 0, 15), "lower_arm.R": (-10, 0, 0), "upper_arm.L": (-60, 0, 10), "lower_arm.L": (-40, 0, 0)})),
+        (24, dict(STOOP, **{"chest": (10, 30, 0), "upper_arm.R": (-60, 0, -40), "lower_arm.R": (-20, 0, 0), "upper_arm.L": (-55, 0, 10), "lower_arm.L": (-30, 0, 0)})),
+    ],
+    # Threshing: the flail swung up over the head and brought down onto the floor.
+    "flail": [
+        (0, dict(HOLD_HIGH, spine=(10, 0, 0))),
+        (9, {"spine": (-8, 0, 0), "upper_arm.R": (-165, 0, -10), "lower_arm.R": (-30, 0, 0), "upper_arm.L": (-170, 0, 10), "lower_arm.L": (-25, 0, 0)}),
+        (14, {"spine": (35, 0, 0), "chest": (10, 0, 0), "upper_arm.R": (-60, 0, -8), "lower_arm.R": (-10, 0, 0), "upper_arm.L": (-70, 0, 12), "lower_arm.L": (-5, 0, 0)}),
+        (20, dict(HOLD_HIGH, spine=(15, 0, 0))),
+        (24, dict(HOLD_HIGH, spine=(10, 0, 0))),
+    ],
+    # Winnowing: the basket held low in both hands, tossed up into the wind.
+    "winnow": [
+        (0, {"spine": (10, 0, 0), "upper_arm.R": (-35, 0, 15), "lower_arm.R": (-55, 0, 0), "upper_arm.L": (-35, 0, -15), "lower_arm.L": (-55, 0, 0)}),
+        (6, {"spine": (-5, 0, 0), "upper_arm.R": (-75, 0, 15), "lower_arm.R": (-40, 0, 0), "upper_arm.L": (-75, 0, -15), "lower_arm.L": (-40, 0, 0)}),
+        (12, {"spine": (5, 0, 0), "upper_arm.R": (-45, 0, 15), "lower_arm.R": (-50, 0, 0), "upper_arm.L": (-45, 0, -15), "lower_arm.L": (-50, 0, 0)}),
+        (24, {"spine": (10, 0, 0), "upper_arm.R": (-35, 0, 15), "lower_arm.R": (-55, 0, 0), "upper_arm.L": (-35, 0, -15), "lower_arm.L": (-55, 0, 0)}),
+    ],
+    # Eating: hand to mouth.
+    "eat": [
+        (0, {"upper_arm.R": (-40, 0, -10), "lower_arm.R": (-120, 0, 0)}),
+        (12, {"upper_arm.R": (-50, 0, -10), "lower_arm.R": (-135, 0, 0), "head": (-5, 0, 0)}),
+        (24, {"upper_arm.R": (-40, 0, -10), "lower_arm.R": (-120, 0, 0)}),
     ],
 }
 
