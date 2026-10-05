@@ -14,7 +14,7 @@ const PLAN := {
 	3: [],
 }
 const SELL_AT := 10        ## Goods in the cart that make a trip to market worthwhile.
-const WATER_BELOW := 0.45
+const WATER_TO := 0.9       ## Top the soil up to moist; more than this risks soggy.
 const SOW_POINTS: Array[Vector2] = [Vector2(0.33, 0.33), Vector2(0.67, 0.33), Vector2(0.33, 0.67), Vector2(0.67, 0.67)]
 const CHAFF_TO_CLEAN := {&"barley_chaff": &"barley", &"wheat_chaff": &"wheat"}
 
@@ -264,13 +264,15 @@ func _water() -> Task:
 	if Clock.raining or not npc.inventory.has(&"bucket"):
 		return null
 	for p in field.plots:
-		if p.state.has_crop() and p.state.moisture < WATER_BELOW:
+		# Water what will be dry by tomorrow, and only up to moist (never soggy).
+		if p.state.has_crop() and p.state.dry_by_tomorrow(Clock.season()):
 			if water <= 0.0:
 				return _job("Drawing water", well.global_position, &"crank", 4.0,
 					func() -> void: water = 1.0, &"", 1.7)
 			return _job("Watering", p.global_position, &"pour", 2.5, func() -> void:
-				p.state.water(0.85)
-				water -= 0.34
+				var amount := clampf(WATER_TO - p.state.moisture, 0.0, water / PourGame.BUCKET_PER_MOISTURE)
+				p.state.water(amount)
+				water = maxf(0.0, water - amount * PourGame.BUCKET_PER_MOISTURE)
 				p.refresh(), &"bucket", 1.6)
 	return null
 

@@ -85,6 +85,11 @@ func is_bolted() -> bool:
 	return is_ripe() and crop.bolt_days > 0 and ripe_days >= crop.bolt_days
 
 
+## Will the soil be dry by tomorrow if it isn't watered (or rained on)?
+func dry_by_tomorrow(season: int) -> bool:
+	return moisture - DRY_RATE[season] < DRY
+
+
 func growth_fraction() -> float:
 	if crop == null or not germinated:
 		return 0.0

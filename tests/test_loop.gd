@@ -464,6 +464,7 @@ func test_keep_grain_as_seed() -> void:
 ## Wynn, the neighbour, farms a whole year on his own (instant mode: walking and work take no
 ## time): tills, sows, harvests, sells, keeps himself fed, and ends the year better off.
 var _labels := {}
+var _soggy_seen := 0
 
 
 func test_neighbour_farms_a_year() -> void:
@@ -495,11 +496,16 @@ func test_neighbour_farms_a_year() -> void:
 			var g2 := 0
 			while not t.update(wynn, 0.1) and g2 < 50:
 				g2 += 1
+			if t.label == "Watering":
+				for p in field.plots:
+					if p.state.moisture > PlotState.SOGGY and not Clock.raining:
+						_soggy_seen += 1
 			Clock.advance(30.0)
 			lowest_hunger = minf(lowest_hunger, wynn.needs.hunger)
 		Clock.skip_to_hour(6.0)
 	var wcart: HandCart = w.get_node("WynnCart")
 	eq(wcart.goods.count(&"barley_sheaf") + wcart.goods.count(&"wheat_sheaf"), 0, "sheaves never end up stuck in the cart")
+	eq(_soggy_seen, 0, "Wynn never waters a bed to soggy")
 	print("WYNN year: ", counts, " gold %d -> %d, lowest hunger %.0f, labels seen: " % [start_gold, wynn.wallet.gold, lowest_hunger], _labels.keys())
 	check(counts.sown >= 4, "sowed several beds over the year (%d)" % counts.sown)
 	check(counts.harvest_tasks >= 6, "harvested (%d harvest jobs)" % counts.harvest_tasks)

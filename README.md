@@ -68,7 +68,10 @@ are their own seed: while carrying a sack of clean grain, open your pack (Tab) a
 
 **What hurts crops.** Look at a plot to see its health and what hurt it overnight. Quality is mostly
 health (60%), plus how evenly you sowed (25%) and how well you tilled (15%); better quality sells for more.
-- *Dry soil:* growth drops to 40% that day and health falls 12%.
+- *Soil water* is judged at midnight. Dry (below 0.2) drops growth to 40% that day and costs 12% health;
+  soggy (above 1.1) costs 3% health and doubles the blight risk. Damp and moist are both fine. Soil dries
+  0.3 a night in spring and autumn, 0.45 in summer and 0.12 in winter; rain resets it to moist. The plot
+  tells you when damp soil will be dry tomorrow; the pouring band tops it up to moist.
 - *Weeds:* each weed slows growth by a tenth (down to half speed) and costs 3.5% health a day, up to 5 weeds
   per plot. A snapped root regrows the next day.
 - *Crows:* they eat sown seed before it sprouts. Fewer seeds sprout, so you get fewer plants and less even

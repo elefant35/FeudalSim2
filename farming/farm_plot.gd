@@ -271,7 +271,9 @@ func status_text() -> String:
 			Items.QUALITY_NAMES[state.quality()].to_lower(), roundi(state.health * 100.0)])
 		if not state.stress.is_empty():
 			lines.append("Hurt overnight by: " + ", ".join(state.stress))
-	var soil := "dry" if state.moisture < PlotState.DRY else ("soggy" if state.moisture > PlotState.SOGGY else ("damp" if state.moisture < 0.6 else "moist"))
+	var soil := "dry: water it!" if state.moisture < PlotState.DRY else ("soggy: too much water" if state.moisture > PlotState.SOGGY else ("damp" if state.moisture < 0.6 else "moist"))
+	if state.has_crop() and soil == "damp":
+		soil = "damp: fine today, dry tomorrow" if state.dry_by_tomorrow(Clock.season()) else "damp: fine"
 	var extra := "Soil %s" % soil
 	if not state.weeds.is_empty():
 		extra += " · %d weed%s" % [state.weeds.size(), "" if state.weeds.size() == 1 else "s"]
