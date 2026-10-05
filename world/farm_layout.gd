@@ -10,6 +10,7 @@ const THRESHING_POS := Vector3(-8.0, 0.0, -12.0)
 const STALL_POS := Vector3(-3.0, 0.0, 11.0)
 const BUYER_POS := Vector3(7.0, 0.0, 11.5)
 const LANE_Z := 14.5
+const CART_POS := Vector3(-4.5, 0.0, 1.6)
 
 static var bed_wake_position := Vector3(-11.0, 0.0, -3.0)
 static var bed_wake_yaw := -PI / 2
@@ -31,6 +32,14 @@ static func build(world: Node3D) -> void:
 	tf.position = THRESHING_POS
 	world.add_child(tf)
 	_sign(world, "Threshing Floor", THRESHING_POS + Vector3(3.2, 0, 2.6), -0.6)
+	var piles := Piles.new()
+	piles.name = "Piles"
+	world.add_child(piles)
+	var cart := HandCart.new()
+	cart.name = "HandCart"
+	world.add_child(cart)
+	cart.global_position = CART_POS
+	cart.global_rotation.y = PI / 2   # parked beside the garden gate, handles towards the house
 	_stall(world)
 	_buyer(world)
 	_lane(world)
@@ -44,6 +53,8 @@ static func no_dig_reason(pos: Vector3) -> String:
 		return "Not on the lane."
 	if pos.x > -11.4 and pos.x < -1.4 and absf(pos.z - (-3.0)) < 2.0:
 		return "Not on the path to the house."
+	if Vector2(pos.x - BUYER_POS.x, pos.z - BUYER_POS.z).length() < 4.5 or Vector2(pos.x - STALL_POS.x, pos.z - STALL_POS.z).length() < 4.0:
+		return "Too close to the traders."
 	if Vector2(pos.x - THRESHING_POS.x, pos.z - THRESHING_POS.z).length() < 4.4:
 		return "Too close to the threshing floor."
 	if Vector2(pos.x, pos.z).length() > 60.0:
@@ -237,6 +248,7 @@ static func _stall(world: Node3D) -> void:
 static func _buyer(world: Node3D) -> void:
 	var cart := ProduceBuyer.new()
 	cart.name = "ProduceBuyer"
+	cart.add_to_group("buyer")
 	cart.position = BUYER_POS
 	cart.rotation.y = PI / 2
 	world.add_child(cart)

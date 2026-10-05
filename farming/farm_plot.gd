@@ -288,6 +288,17 @@ func _action_text(player: Player) -> String:
 	var held := player.held()
 	var it := Items.item(held)
 	var p := player.target_point
+	if held == Player.PULLING:
+		return "Let go of the handcart (E) to work the plot."
+	if held == Player.CARRYING:
+		var cc := cell_under(p)
+		var product: StringName = state.crop.product_item if state.crop else &""
+		var room := player.carry_space(product) if product != &"" else 0
+		if room > 0 and state.plants[cc] == PlotState.Plant.CUT:
+			return "[Click] Bind into a sheaf  (%d more fit in your arms)" % room
+		if room > 0 and state.plants[cc] == PlotState.Plant.ALIVE and state.is_ripe() and state.crop.harvest == CropData.Harvest.HANDS:
+			return "[Hold left] Pull the %s  (%d more fit in your arms)" % [state.crop.display_name.to_lower(), room]
+		return "Your arms are full (%s). Set them down beside the plot or in the handcart (E)." % player.carry_text()
 	if held != Player.HANDS and state.plants[cell_under(p)] == PlotState.Plant.CUT:
 		return "Switch to your hands (1), then click each cut bundle to bind it into a sheaf."
 	if held == Player.HANDS:
@@ -327,10 +338,25 @@ func _action_text(player: Player) -> String:
 	return ""
 
 
+## E on a plot while carrying: piles go beside plots, not on them.
+func interact(player: Player) -> void:
+	if player.is_carrying():
+		player.say("Set it down on the grass beside the plot, or in the handcart.")
+
+
 func use(player: Player) -> Minigame:
 	var held := player.held()
 	var it := Items.item(held)
 	var p := player.target_point
+	if held == Player.CARRYING:
+		# Arms already holding this crop can take more while you harvest down the row.
+		if state.crop and player.carry_space(state.crop.product_item) > 0:
+			var cc := cell_under(p)
+			if state.plants[cc] == PlotState.Plant.CUT:
+				_bind(player, cc)
+			elif state.plants[cc] == PlotState.Plant.ALIVE and state.is_ripe() and state.crop.harvest == CropData.Harvest.HANDS:
+				return TugGame.harvest(self, cc)
+		return null
 	if held == Player.HANDS:
 		var w := weed_under(p)
 		if w >= 0:
@@ -346,20 +372,13 @@ func use(player: Player) -> Minigame:
 			PlotState.Plant.BLIGHTED:
 				return TugGame.blighted(self, c)
 			PlotState.Plant.CUT:
-				var product := state.crop.product_item
-				var q := state.bind_cell(c)
-				if q >= 0:
-					player.viewmodel.play_pick()
-					player.inventory.add(product, 1, q)
-					player.needs.exert(0.3)
-					Sfx.play_at("rustle", cell_world(c))
-					refresh()
-					if not field.any_cut():
-						player.say("All bound. Take your sheaves to the threshing floor, north-west of the house.")
+				_bind(player, c)
 				return null
 			PlotState.Plant.ALIVE:
 				if state.is_ripe() and state.crop.harvest == CropData.Harvest.HANDS:
 					return TugGame.harvest(self, c)
+		return null
+	if held == Player.PULLING:
 		return null
 	if held == &"hoe" and not state.has_crop() and not state.is_tilled():
 		return TillGame.new(self)
@@ -372,14 +391,38 @@ func use(player: Player) -> Minigame:
 	return null
 
 
-## Harvest a hand-pulled cell; gives the produce to the player.
+## Bind a cut cell into a sheaf, straight into the player's arms.
+func _bind(player: Player, c: int) -> void:
+	var product := state.crop.product_item
+	if player.carry_space(product) <= 0:
+		player.say("Your arms are full. Set them down first (E).")
+		return
+	var q := state.bind_cell(c)
+	if q < 0:
+		return
+	player.viewmodel.play_pick()
+	player.pick_up(product, q)
+	player.needs.exert(0.3)
+	Sfx.play_at("rustle", cell_world(c))
+	refresh()
+	if player.carry_space(product) == 0:
+		player.say("Your arms are full of sheaves. Set them down in a stook (E on the grass) or the handcart.")
+	elif not field.any_cut():
+		player.say("All bound. Stack your sheaves, then take them to the threshing floor.")
+
+
+## Harvest a hand-pulled cell, into the player's arms.
 func harvest_by_hand(player: Player, c: int) -> void:
 	var product := state.crop.product_item
+	if player.carry_space(product) <= 0:
+		player.say("Your arms are full. Set them down first (E).")
+		return
 	var q := state.harvest_cell(c)
 	if q < 0:
 		return
-	player.inventory.add(product, 1, q)
-	player.say("%s." % Items.name_of(product, q))
+	player.pick_up(product, q)
+	if player.carry_space(product) == 0:
+		player.say("Your arms are full. Set them down (E): on the grass as a pile, or in the handcart.")
 	refresh()
 
 

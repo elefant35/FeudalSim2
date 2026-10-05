@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"wheat_sheaf"
 display_name = "Wheat sheaf"
-description = "Thresh it on the threshing floor."
+description = "Carry it to the threshing floor and lay it out to thresh."
 kind = 4
 buy_price = 0
 buy_quantity = 1
@@ -15,3 +15,4 @@ food_value = 0.0
 has_quality = true
 crop = &""
 hotbar = false
+carry_max = 3

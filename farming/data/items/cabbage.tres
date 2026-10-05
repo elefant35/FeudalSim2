@@ -15,3 +15,4 @@ food_value = 25.0
 has_quality = true
 crop = &""
 hotbar = false
+carry_max = 4

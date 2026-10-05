@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"barley_chaff"
 display_name = "Unwinnowed barley"
-description = "Threshed grain still full of chaff. Winnow it."
+description = "Threshed barley still full of chaff. Winnow it on the threshing floor."
 kind = 4
 buy_price = 0
 buy_quantity = 1

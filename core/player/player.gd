@@ -9,6 +9,7 @@ extends CharacterBody3D
 signal message(text: String)
 signal hotbar_changed
 signal minigame_changed(game: Minigame)
+signal carry_changed
 
 const WALK_SPEED := 3.4
 const RUN_SPEED := 5.6
@@ -18,6 +19,9 @@ const REACH := 3.2
 const STEP_HEIGHT := 0.32
 const EYE_HEIGHT := 1.6
 const HANDS := &"hands"
+const CARRYING := &"carrying"   ## held() while your arms are full of produce.
+const PULLING := &"pulling"     ## held() while pulling the handcart.
+const POCKET_MAX := 6           ## Produce the pack can hold, for eating on the go.
 
 var needs := Needs.new()
 var wallet := Wallet.new()
@@ -39,7 +43,12 @@ var target: Node = null
 var target_point: Vector3 = Vector3.ZERO
 ## Per-tool state that outlives a minigame (e.g. how much water is in the bucket).
 var tool_state: Dictionary = {}
-var dev_walk_seconds: float = 0.0   ## Dev runs: walk forward on our own for this long.
+var dev_walk_seconds: float = 0.0
+## What's in your arms: one kind of bulky item, one quality per unit.
+var carry_id: StringName = &""
+var carry_units: Array[int] = []
+## The handcart you're pulling, if any.
+var pulling: Node3D = null   ## Dev runs: walk forward on our own for this long.
 
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _step_distance: float = 0.0
@@ -89,10 +98,104 @@ func _ready() -> void:
 
 ## What's in hand: the selected slot's item, or bare hands if the slot is empty or used up.
 func held() -> StringName:
+	if pulling:
+		return PULLING
+	if is_carrying():
+		return CARRYING
 	var id := hotbar[held_index]
 	if id == &"" or id == HANDS or not inventory.has(id):
 		return HANDS
 	return id
+
+
+# --- Carrying bulky goods in your arms -------------------------------------------------------
+
+func is_carrying() -> bool:
+	return not carry_units.is_empty()
+
+
+func carry_count() -> int:
+	return carry_units.size()
+
+
+## How many more of `id` your arms can take right now.
+func carry_space(id: StringName) -> int:
+	var it := Items.item(id)
+	if it == null or it.carry_max <= 0 or pulling != null:
+		return 0
+	if is_carrying() and carry_id != id:
+		return 0
+	return it.carry_max - carry_units.size()
+
+
+func pick_up(id: StringName, quality: int) -> bool:
+	if carry_space(id) <= 0:
+		return false
+	carry_id = id
+	carry_units.append(quality)
+	_carry_updated()
+	return true
+
+
+## Empties your arms, returning what you were carrying (one quality per unit).
+func take_carry() -> Array[int]:
+	var units := carry_units.duplicate()
+	carry_units.clear()
+	carry_id = &""
+	_carry_updated()
+	return units
+
+
+func carry_text() -> String:
+	if not is_carrying():
+		return ""
+	return "%d %s" % [carry_count(), Items.name_of(carry_id).to_lower() + ("s" if carry_count() > 1 and not carry_id.ends_with("y") else "")]
+
+
+func _carry_updated() -> void:
+	viewmodel.set_carry(carry_id, carry_units.size())
+	viewmodel.set_held(held())
+	hotbar_changed.emit()
+	carry_changed.emit()
+
+
+## Produce held in the pack.
+func pocket_count() -> int:
+	var n := 0
+	for st in inventory.stacks():
+		var it := Items.item(st.id)
+		if it and it.carry_max > 0:
+			n += st.count
+	return n
+
+
+## Moves one unit of food from your arms into the pack.
+func pocket_one() -> bool:
+	if not is_carrying() or Items.item(carry_id).food_value <= 0.0 or pocket_count() >= POCKET_MAX:
+		return false
+	var id := carry_id
+	var q: int = carry_units.pop_back()
+	if carry_units.is_empty():
+		carry_id = &""
+	inventory.add(id, 1, q)
+	_carry_updated()
+	return true
+
+
+## Sets your load down where you're looking (or at your feet): onto a matching pile, or as a new one.
+func set_down() -> void:
+	if not is_carrying():
+		return
+	var at := target_point if target != null else global_position - global_basis.z * 1.0
+	at.y = Terrain.height_at(at.x, at.z)
+	var piles := get_tree().get_first_node_in_group("piles")
+	if piles == null:
+		return
+	var id := carry_id
+	var units := take_carry()
+	piles.put(id, units, at)
+	Sfx.play_at("rustle", at)
+	say("You set down %d %s." % [units.size(), Items.name_of(id).to_lower()])
 
 
 ## Seed types carried, in a stable order.
@@ -220,8 +323,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("interact"):
 		if minigame != null:
 			minigame.stop()
+		elif pulling != null:
+			pulling.call("release", self)
 		elif target != null and target.has_method("interact"):
 			target.interact(self)
+		elif is_carrying():
+			set_down()
 	elif event.is_action_pressed("eat"):
 		eat_something()
 	elif event is InputEventKey and event.pressed and not event.echo:
@@ -239,6 +346,15 @@ func _unhandled_input(event: InputEvent) -> void:
 func eat_something() -> void:
 	if needs.hunger >= 98.0:
 		say("You're not hungry.")
+		return
+	if is_carrying() and Items.item(carry_id).food_value > 0.0:
+		var id := carry_id
+		var q: int = carry_units.pop_front()
+		if carry_units.is_empty():
+			carry_id = &""
+		_carry_updated()
+		inventory.add(id, 1, q)
+		eat(id, q)
 		return
 	var best: ItemData = null
 	for s in inventory.stacks():
@@ -276,6 +392,10 @@ func _physics_process(delta: float) -> void:
 		if dev_walk_seconds <= 0.0:
 			print("DEV walked to ", global_position)
 	var speed := (RUN_SPEED if running else WALK_SPEED) * needs.speed_factor()
+	if pulling:
+		speed *= 0.8
+	elif is_carrying():
+		speed *= 0.9
 	var dir := (transform.basis * Vector3(input.x, 0, input.y)).normalized()
 	velocity.x = move_toward(velocity.x, dir.x * speed, 40.0 * delta)
 	velocity.z = move_toward(velocity.z, dir.z * speed, 40.0 * delta)
@@ -333,6 +453,7 @@ func to_dict() -> Dictionary:
 		"pos": [global_position.x, global_position.y, global_position.z], "yaw": rotation.y,
 		"needs": needs.to_dict(), "gold": wallet.gold, "inventory": inventory.to_dict(),
 		"tool_state": tool_state, "hotbar": hotbar,
+		"carry_id": String(carry_id), "carry_units": carry_units,
 	}
 
 
@@ -344,6 +465,13 @@ func from_dict(d: Dictionary) -> void:
 	wallet.changed.emit(wallet.gold)
 	inventory.from_dict(d.inventory)
 	tool_state = d.get("tool_state", {})
+	carry_id = StringName(d.get("carry_id", ""))
+	carry_units.clear()
+	for q in d.get("carry_units", []):
+		carry_units.append(int(q))
+	if carry_units.is_empty():
+		carry_id = &""
+	viewmodel.set_carry(carry_id, carry_units.size())
 	if d.has("hotbar"):
 		for i in mini(HOTBAR_SIZE, d.hotbar.size()):
 			hotbar[i] = StringName(d.hotbar[i])

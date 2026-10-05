@@ -36,6 +36,8 @@ var _walk := 0.0
 var _bob_t := 0.0
 var _bucket_fill := 0.0
 var _left_food: Node3D = null
+var _carry_id: StringName = &""
+var _carry_count := 0
 
 
 static func _basis(up: Vector3, front: Vector3, s: float = 1.0) -> Basis:
@@ -83,6 +85,13 @@ func _build_specs() -> void:
 			"rest": _pose(Vector3(0.32, -0.72, -0.8), Vector3(-0.15, 1, -0.25), Vector3(0, 0, -1), 0.45),
 		}},
 		&"hands": {"poses": {"rest": Transform3D.IDENTITY}},
+		# An armful of produce, held in front with palms up underneath it.
+		&"carrying": {"grip_r": Vector3(0.2, 0.02, 0.02), "grip_l": Vector3(-0.2, 0.02, 0.02), "roll_r": -1.5, "roll_l": 1.5, "poses": {
+			"rest": _pose(Vector3(0, -0.45, -0.62), Vector3(0, 1, 0.15), Vector3(0, 0, -1)),
+		}},
+		# Both hands low and forward, gripping the handcart's shafts.
+		&"pulling": {"hand_r": Vector3(0.28, -0.5, -0.3), "hand_l": Vector3(-0.28, -0.5, -0.3), "roll_r": 1.4, "roll_l": -1.4,
+			"poses": {"rest": Transform3D.IDENTITY}},
 	}
 
 
@@ -109,6 +118,9 @@ func _process(delta: float) -> void:
 	var bare := _held_id == Player.HANDS or _held_id == &""
 	var rest_r := HAND_SHOW_R if bare else HAND_REST_R
 	var rest_l := HAND_SHOW_L if bare else HAND_REST_L
+	if _spec.has("hand_r"):
+		rest_r = _spec.hand_r
+		rest_l = _spec.hand_l
 	var target_r: Vector3 = xf * (_spec.grip_r as Vector3) if _model and _spec.has("grip_r") else rest_r + r_off + bob
 	var target_l: Vector3 = xf * (_spec.grip_l as Vector3) if _model and _spec.has("grip_l") and _left_food == null else rest_l + l_off + bob * Vector3(-1, 1, 1)
 	_place_arm(right_arm, SHOULDER_R, target_r, _spec.get("roll_r", 0.0))
@@ -133,6 +145,40 @@ func set_walk(amount: float) -> void:
 	_walk = lerpf(_walk, clampf(amount, 0.0, 1.0), 0.15)
 
 
+## What the arms are carrying (rebuilds the armful if it changed).
+func set_carry(id: StringName, count: int) -> void:
+	if id == _carry_id and count == _carry_count:
+		return
+	_carry_id = id
+	_carry_count = count
+	if _held_id == Player.CARRYING:
+		_held_id = &""   # force set_held to rebuild the armful
+
+
+func _build_armful() -> Node3D:
+	var root := Node3D.new()
+	root.scale = Vector3.ONE * 0.62   # a believable armful, kept low so you can see past it
+	var it := Items.item(_carry_id)
+	var n := mini(_carry_count, 5)
+	var sheaf := String(_carry_id).ends_with("_sheaf")
+	var sack := it != null and it.kind == ItemData.Kind.GRAIN and not sheaf
+	for i in n:
+		var m := Models.make(&"grain_sack" if sack else _carry_id)
+		root.add_child(m)
+		if sheaf:   # sheaves lie across the arms
+			m.rotation = Vector3(0, 0.15 * i, PI / 2)
+			m.position = Vector3(0.42, 0.06 + i * 0.09, -0.05 * i)
+			m.scale = Vector3.ONE * 0.8
+		elif sack:
+			m.scale = Vector3.ONE * (0.6 + 0.1 * mini(_carry_count, 4))
+			break
+		else:       # a heap: four on the bottom, one on top
+			var row := Vector2(float(i % 2) - 0.5, float((i / 2) % 2) - 0.5) * 0.15
+			m.position = Vector3(row.x, (0.12 if i == 4 else 0.0), row.y)
+			m.rotation.y = i * 1.3
+	return root
+
+
 func set_held(id: StringName) -> void:
 	if id == _held_id:
 		return
@@ -144,7 +190,11 @@ func set_held(id: StringName) -> void:
 	var it := Items.item(id)
 	var key: StringName = &"seed_pouch" if it and it.kind == ItemData.Kind.SEED else id
 	_spec = _specs.get(key, _specs[&"hands"])
-	if _spec.has("model"):
+	if id == Player.CARRYING and _carry_count > 0:
+		_model = _build_armful()
+		add_child(_model)
+		_no_shadows(_model)
+	elif _spec.has("model"):
 		_model = Models.make(_spec.model)
 		add_child(_model)
 		_no_shadows(_model)

@@ -22,3 +22,6 @@ enum Kind { TOOL, SEED, PRODUCE, FOOD, GRAIN, PLACEABLE }
 @export var crop: StringName
 ## Shown in the hotbar (tools, seeds, placeables).
 @export var hotbar: bool = false
+## Bulky goods (produce, sheaves, grain) are carried in your arms, up to this many at once, and
+## set down in piles or a cart. 0 = a small thing that goes in the pack.
+@export var carry_max: int = 0

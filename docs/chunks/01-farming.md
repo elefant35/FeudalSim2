@@ -15,6 +15,16 @@ planting around the four seasons.
   weeds, pests, blight) clearly costs yield and quality.
 - **Start:** a hoe, a little seed and a little gold. Everything else is earned.
 - **Chain:** goes through threshing and winnowing. Milling and flour are left for the baking chunk.
+- **Physical produce (playtest 3):** harvests stay in the world.
+  - **Arms:** bulky goods go into your arms (turnips 8, cabbages 4, sheaves 3, grain sacks 4). Tools
+    can't be used while you carry.
+  - **Setting down:** E puts the load in the handcart, on the threshing floor (sheaves), onto a
+    matching pile, or on the grass as a new pile.
+  - **Pack:** holds a handful (6) of produce to eat.
+  - **Handcart:** pullable (E at its handles); the buyer buys from a cart parked beside it.
+  - **Threshing floor:** threshed grain stays on the floor; winnowed grain goes into sacks beside it.
+- **Plots anywhere (playtest 3):** the hoe breaks new ground on open grass (with a green/red
+  placement outline). Four beds start dug in the fenced garden.
 
 ## Scope
 
@@ -157,6 +167,8 @@ The input routing, the trade/pack/menu panels, and the sleep fade still need a r
   - manure
   - ploughing with an animal
   - more crops (peas, beans, onions, flax)
+- **Straw and hay bales** for the animal chunk. Piles are generic (any bulky item), so a "straw" or "hay
+  bale" item only needs a model and data.
 - **Bigger systems, explicitly out of scope until their chunk:**
   - milling and flour (baking chunk)
   - real traders and price haggling (market chunk)

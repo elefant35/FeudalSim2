@@ -6,26 +6,26 @@ extends Minigame
 const GUST := 0.6
 
 var floor_: ThreshingFloor
-var item: StringName       ## The unwinnowed grain being cleaned, e.g. barley_chaff.
+var item: StringName = &""  ## The unwinnowed grain in the basket, e.g. barley_chaff.
 var quality: int = 0
-var _loaded := false       ## One measure is in the basket (taken from the pack).
+var _loaded := false       ## One measure is in the basket (taken from the floor's heap).
 var _clean := 0.0
 var _lift := 0.0
 var _holding := false
 var _last := ""
 
 
-func _init(f: ThreshingFloor, chaff_item: StringName) -> void:
+func _init(f: ThreshingFloor) -> void:
 	floor_ = f
-	item = chaff_item
 	hint = "Hold to lift, release to toss. Toss when the wind gusts (watch the pennant)."
 
 
 func _load_next() -> bool:
-	var q := player.inventory.take_one(item, true)
-	if q < -1:
+	var m := floor_.take_from_heap()
+	if m.is_empty():
 		return false
-	quality = q
+	item = m.id
+	quality = m.quality
 	_loaded = true
 	_clean = 0.0
 	return true
@@ -67,12 +67,12 @@ func release() -> void:
 	Fx.burst(player, hand, Color(0.8, 0.7, 0.45), int(30 * gain) + 6, 1.5 + wind * 3.0, floor_.wind_dir() + Vector3.UP * 0.6, 25.0, 0.02, 1.5, 1.6)
 	if _clean >= 1.0:
 		var clean_item := StringName(String(item).trim_suffix("_chaff"))
-		player.inventory.add(clean_item, 1, quality)
+		floor_.add_clean(clean_item, quality)
 		Sfx.play("grain", -4.0)
-		player.say("A measure of clean %s." % clean_item)
+		player.say("A measure of clean %s, into a sack." % clean_item)
 		_loaded = false
 		if not _load_next():
-			player.say("All your grain is winnowed. Sell it at the produce cart.")
+			player.say("All winnowed. Pick up the sacks (E) and take them to the cart or the buyer.")
 			stop()
 
 
@@ -84,7 +84,7 @@ func update(delta: float) -> void:
 
 func _on_stop() -> void:
 	if _loaded:
-		player.inventory.add(item, 1, quality)
+		floor_.return_to_heap(item, quality)
 		_loaded = false
 	player.viewmodel.pose_rest()
 	var g := player.viewmodel.held_model()

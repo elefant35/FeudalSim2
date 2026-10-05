@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"wheat"
 display_name = "Wheat"
-description = "A measure of clean wheat."
+description = "A measure of clean wheat. Sell it at the Produce Bought cart."
 kind = 4
 buy_price = 0
 buy_quantity = 1
@@ -15,3 +15,4 @@ food_value = 0.0
 has_quality = true
 crop = &""
 hotbar = false
+carry_max = 4

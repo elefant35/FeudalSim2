@@ -51,6 +51,7 @@ func setup(p: Player) -> void:
 	player = p
 	player.message.connect(toast)
 	player.hotbar_changed.connect(_refresh_hotbar)
+	player.carry_changed.connect(_refresh_hotbar)
 	player.inventory.changed.connect(_refresh_hotbar)
 	player.wallet.changed.connect(_on_gold_changed)
 	Clock.speed_changed.connect(_on_speed_changed)
@@ -293,7 +294,11 @@ func _refresh_hotbar() -> void:
 		tile.set_item(id, -1, n if it and it.kind != ItemData.Kind.TOOL else 0)
 		_hotbar.add_child(tile)
 	var held := player.held()
-	if held == Player.HANDS:
+	if held == Player.CARRYING:
+		_held_label.text = "Carrying %s  ·  E to set down" % player.carry_text()
+	elif held == Player.PULLING:
+		_held_label.text = "Pulling the handcart  ·  E to let go"
+	elif held == Player.HANDS:
 		_held_label.text = "Hands"
 	else:
 		var hi := Items.item(held)
@@ -474,6 +479,27 @@ func open_inventory() -> void:
 	grid.add_theme_constant_override("h_separation", 6)
 	grid.add_theme_constant_override("v_separation", 6)
 	v.add_child(grid)
+	if player.is_carrying():
+		var arms := HBoxContainer.new()
+		arms.add_theme_constant_override("separation", 8)
+		var t := ItemTile.new()
+		t.set_item(player.carry_id, -1, player.carry_count())
+		arms.add_child(t)
+		arms.add_child(_label("In your arms: %s" % player.carry_text(), FONT, INK, false))
+		var food := Items.item(player.carry_id).food_value > 0.0
+		if food:
+			for pair: Array in [["Eat one", func() -> void: player.eat_something(); _refresh_pack()],
+					["Pocket one (%d/%d)" % [player.pocket_count(), Player.POCKET_MAX], func() -> void:
+						if not player.pocket_one():
+							player.say("Your pack can't hold more produce.")
+						_refresh_pack()]]:
+				var b := Button.new()
+				b.text = pair[0]
+				b.focus_mode = Control.FOCUS_NONE
+				b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+				b.pressed.connect(pair[1])
+				arms.add_child(b)
+		v.add_child(arms)
 	var stacks := player.inventory.stacks()
 	for st in stacks:
 		var tile := ItemTile.new()

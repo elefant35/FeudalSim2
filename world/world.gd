@@ -43,7 +43,7 @@ func _ready() -> void:
 
 
 func _objective() -> String:
-	return FarmGuide.next_step(player, $Field, $ThreshingFloor)
+	return FarmGuide.next_step(player, $Field, $ThreshingFloor, $Piles, $HandCart)
 
 
 func _start_fresh() -> void:
@@ -289,7 +289,11 @@ func dev_scenario(scenario: String) -> void:
 				player.inventory.add(id)
 			for id: StringName in [&"cabbage_seed", &"barley_seed", &"wheat_seed"]:
 				player.inventory.add(id, 12)
-			player.inventory.add(&"barley_sheaf", 3, 2)
+			var cart: HandCart = $HandCart
+			cart.goods.add(&"turnip", 6, 2)
+			cart.goods.add(&"cabbage", 3, 1)
+			var stook: Array[int] = [2, 2, 1]
+			($Piles as Piles).put(&"barley_sheaf", stook, FarmLayout.THRESHING_POS + Vector3(3.2, 0, -1.0))
 			player.set_bucket_water(1.0)
 			for i in field.plots.size():
 				var s := field.plots[i].state
@@ -313,6 +317,4 @@ func dev_scenario(scenario: String) -> void:
 		"tools":
 			for id: StringName in [&"bucket", &"sickle", &"flail", &"winnowing_basket", &"scarecrow"]:
 				player.inventory.add(id)
-			player.inventory.add(&"barley_sheaf", 3, 2)
-			player.inventory.add(&"wheat_chaff", 2, 2)
 			player.set_bucket_water(1.0)

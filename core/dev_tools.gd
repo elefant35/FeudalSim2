@@ -12,6 +12,8 @@ extends Node
 ## --hold=slot     select a hotbar slot
 ## --click         left-click whatever is under the crosshair (starts its minigame)
 ## --interact      press E on whatever is under the crosshair
+## --carry=id:n    start with n of id in your arms
+## --pull          take the handcart's handles
 ## --walk=seconds  walk straight ahead (prints where you end up)
 ## --open=panel    open a panel: guide, pack, pause
 ## --eat           eat something just before the screenshot
@@ -53,6 +55,15 @@ func apply(world: Node3D, player: Player) -> void:
 		var v := String(args.look).split_floats(",")
 		player.rotation.y = deg_to_rad(v[0])
 		player.head.rotation.x = deg_to_rad(v[1] if v.size() > 1 else 0.0)
+	if args.has("carry"):
+		var cp := String(args.carry).split(":")
+		for k in int(cp[1]) if cp.size() > 1 else 1:
+			player.pick_up(StringName(cp[0]), 2)
+	if args.has("pull"):
+		var cart: HandCart = world.get_node("HandCart")
+		player.global_position = cart.handle_point()
+		player.rotation.y = cart.global_rotation.y   # facing away from the cart, ready to pull
+		cart.grab(player)
 	if args.has("walk"):
 		player.dev_walk_seconds = float(args.walk)
 	if args.has("hold"):
