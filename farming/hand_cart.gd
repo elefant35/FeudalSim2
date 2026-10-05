@@ -168,6 +168,15 @@ func release(player: Actor) -> void:
 	player._carry_updated()
 
 
+## Puts the cart straight behind its puller (used when the puller moves instantly, in tests).
+func trail() -> void:
+	if _puller == null:
+		return
+	var back := _puller.global_basis.z
+	var to := _puller.global_position + Vector3(back.x, 0, back.z).normalized() * SHAFT
+	global_position = Vector3(to.x, Terrain.height_at(to.x, to.z), to.z)
+
+
 func is_pulled() -> bool:
 	return _puller != null
 

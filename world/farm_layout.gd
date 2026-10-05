@@ -11,6 +11,13 @@ const STALL_POS := Vector3(-3.0, 0.0, 11.0)
 const BUYER_POS := Vector3(7.0, 0.0, 11.5)
 const LANE_Z := 14.5
 const CART_POS := Vector3(-4.5, 0.0, 1.6)
+# The neighbour's smallholding, east of yours.
+const NB_HOUSE := Vector3(30.0, 0.0, -9.0)
+const NB_FIELD := Vector3(22.0, 0.0, 3.0)
+const NB_FLOOR := Vector3(22.0, 0.0, -17.0)
+const NB_WELL := Vector3(17.5, 0.0, -9.0)
+const NB_CART := Vector3(29.0, 0.0, 4.0)
+const NB_LAYOUT: Array[Vector2] = [Vector2(-3, -1.5), Vector2(0, -1.5), Vector2(3, -1.5), Vector2(-3, 1.5), Vector2(0, 1.5), Vector2(3, 1.5)]
 
 static var bed_wake_position := Vector3(-11.0, 0.0, -3.0)
 static var bed_wake_yaw := -PI / 2
@@ -42,6 +49,7 @@ static func build(world: Node3D) -> void:
 	cart.global_rotation.y = PI / 2   # parked beside the garden gate, handles towards the house
 	_stall(world)
 	_buyer(world)
+	_neighbour(world)
 	_lane(world)
 	_props(world)
 	_scatter_nature(world)
@@ -114,10 +122,17 @@ static func collide_with(parent: Node3D, n: Node3D, shrink: Vector3 = Vector3.ZE
 
 
 static func _house(world: Node3D) -> void:
+	var house := _cottage(world, "House", HOUSE_POS, -PI / 2)   # door faces east, towards the field
+	bed_wake_position = HOUSE_POS + house.basis * Vector3(0.9, 0.1, 1.25)
+	bed_wake_yaw = -PI / 2
+
+
+## A cottage with its bed, hearth and lamp. Returns the cottage node (bed at local (1.95, 0, 1.25)).
+static func _cottage(world: Node3D, node_name: String, pos: Vector3, yaw: float) -> Node3D:
 	var house := Node3D.new()
-	house.name = "House"
-	house.position = HOUSE_POS
-	house.rotation.y = -PI / 2   # door faces east, towards the field
+	house.name = node_name
+	house.position = pos
+	house.rotation.y = yaw
 	world.add_child(house)
 	var m := Models.make(&"house")
 	house.add_child(m)
@@ -132,10 +147,11 @@ static func _house(world: Node3D) -> void:
 		shape.shape = (mi as MeshInstance3D).mesh.create_trimesh_shape()
 		shape.transform = house.global_transform.affine_inverse() * (mi as MeshInstance3D).global_transform
 		body.add_child(shape)
-	var bed := Bed.new()
-	bed.name = "Bed"
-	bed.position = Vector3(1.95, 0.0, 1.25)
-	house.add_child(bed)
+	if node_name == "House":   # only your own bed is yours to sleep in
+		var bed := Bed.new()
+		bed.name = "Bed"
+		bed.position = Vector3(1.95, 0.0, 1.25)
+		house.add_child(bed)
 	var hearth := Hearth.new()
 	hearth.fire = m.find_child("fire", true, false)
 	hearth.position = Vector3(-2.55, 0.5, 0.9)
@@ -151,8 +167,50 @@ static func _house(world: Node3D) -> void:
 	roof.size = Vector3(7.0, 4.8, 6.0)
 	roof.position = Vector3(0, 2.2, 0)
 	house.add_child(roof)
-	bed_wake_position = HOUSE_POS + house.basis * Vector3(0.9, 0.1, 1.25)
-	bed_wake_yaw = -PI / 2
+	return house
+
+
+## Wynn's smallholding: cottage, well, six beds, a threshing floor, a handcart, and Wynn.
+static func _neighbour(world: Node3D) -> void:
+	var house := _cottage(world, "WynnHouse", NB_HOUSE, PI / 2)   # door faces west, towards the beds
+	var well := Well.new()
+	well.name = "WynnWell"
+	well.position = NB_WELL
+	world.add_child(well)
+	var field := Field.new()
+	field.name = "WynnField"
+	field.is_players = false
+	field.layout = NB_LAYOUT
+	field.starters = NB_LAYOUT.size()
+	field.position = NB_FIELD
+	world.add_child(field)
+	var tf := ThreshingFloor.new()
+	tf.name = "WynnFloor"
+	tf.position = NB_FLOOR
+	world.add_child(tf)
+	var cart := HandCart.new()
+	cart.name = "WynnCart"
+	cart.owner_key = &"wynn"
+	world.add_child(cart)
+	cart.global_position = NB_CART
+	cart.global_rotation.y = PI / 2
+	_sign(world, "Wynn's Farm", NB_FIELD + Vector3(-6.0, 0, 5.5), 0.4)
+	var wynn := Npc.new()
+	wynn.name = "Wynn"
+	wynn.display_name = "Wynn"
+	wynn.owner_key = &"wynn"
+	wynn.bed = house.global_transform * Vector3(1.95, 0.0, 1.25)
+	wynn.home = house.global_transform * Vector3(0.0, 0.0, -3.6)   # just outside the door
+	wynn.tint = {"tunic": Color(0.33, 0.43, 0.3), "hair": Color(0.55, 0.36, 0.18)}
+	var role := FarmerRole.new()
+	role.field = field
+	role.floor_ = tf
+	role.cart = cart
+	role.well = well
+	wynn.role = role
+	world.add_child(wynn)
+	wynn.global_position = wynn.home
+	role.stock_up()
 
 
 static func _fence(world: Node3D, field: Field) -> void:
@@ -211,6 +269,7 @@ static func _sign(parent: Node3D, text: String, pos: Vector3, yaw: float) -> voi
 static func _stall(world: Node3D) -> void:
 	var stall := ToolStall.new()
 	stall.name = "ToolStall"
+	stall.add_to_group("stall")
 	stall.position = STALL_POS
 	stall.rotation.y = PI    # counter faces north, towards the farm
 	world.add_child(stall)
@@ -332,7 +391,7 @@ static func _scatter_nature(world: Node3D) -> void:
 	nature.name = "Nature"
 	world.add_child(nature)
 	var blocked := func(x: float, z: float, margin: float) -> bool:
-		return x > -24.0 - margin and x < 16.0 + margin and z > -20.0 - margin and z < 18.0 + margin
+		return x > -24.0 - margin and x < 36.0 + margin and z > -24.0 - margin and z < 18.0 + margin
 	var placed := 0
 	while placed < 170:
 		var x := rng.randf_range(-85, 85)

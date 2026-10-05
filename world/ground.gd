@@ -5,7 +5,7 @@ extends StaticBody3D
 
 
 func _field() -> Field:
-	return get_tree().get_first_node_in_group("field")
+	return get_tree().get_first_node_in_group("player_field")
 
 
 func get_prompt(player: Player) -> String:

@@ -22,6 +22,8 @@ func update(npc: Npc, delta: float) -> bool:
 	if npc.instant:
 		npc.global_position = Vector3(target.x, Terrain.height_at(target.x, target.z), target.z)
 		npc.stop_walking()
+		if npc.pulling and npc.pulling.has_method("trail"):
+			npc.pulling.trail()   # a pulled cart comes along
 		return true
 	var flat := Vector2(npc.global_position.x - target.x, npc.global_position.z - target.z)
 	if flat.length() <= near:

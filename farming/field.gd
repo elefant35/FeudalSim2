@@ -17,6 +17,12 @@ const CROW_CHECK_MINUTES := 60.0
 const CROW_CHANCE := 0.12
 const MAX_CROWS := 2
 
+## Where this field's beds start (local), and how many are dug from the outset.
+var layout: Array[Vector2] = GARDEN_GRID
+var starters: int = STARTER_COUNT
+## The player's field posts its news (frost, blight...) to the player; a neighbour's doesn't.
+var is_players: bool = true
+
 var plots: Array[FarmPlot] = []
 var scarecrows: Array[Vector3] = []
 var rng := RandomNumberGenerator.new()
@@ -32,10 +38,12 @@ var _preview_frame := -10
 func _ready() -> void:
 	add_to_group("saveable")
 	add_to_group("field")
+	if is_players:
+		add_to_group("player_field")
 	rng.randomize()
-	# Last year's beds in the garden: already broken, just needing a light re-tilling.
-	for i in STARTER_COUNT:
-		var p := add_plot(to_global(Vector3(GARDEN_GRID[i].x, 0, GARDEN_GRID[i].y)))
+	# Last year's beds: already broken, just needing a light re-tilling.
+	for i in starters:
+		var p := add_plot(to_global(Vector3(layout[i].x, 0, layout[i].y)))
 		p.state.till_needed = PlotState.STUBBLE_TILL
 	var bm := BoxMesh.new()
 	bm.size = Vector3(FarmPlot.SIZE, 0.06, FarmPlot.SIZE)
@@ -75,10 +83,11 @@ func snap(point: Vector3) -> Vector3:
 
 ## Why a plot can't be dug here, or "" if it can.
 func placement_error(pos: Vector3) -> String:
-	for p in plots:
-		var d := p.global_position - pos
-		if absf(d.x) < FarmPlot.SIZE + 0.3 and absf(d.z) < FarmPlot.SIZE + 0.3:
-			return "Too close to another plot."
+	for f: Field in get_tree().get_nodes_in_group("field"):   # every field, the neighbour's too
+		for p in f.plots:
+			var d := p.global_position - pos
+			if absf(d.x) < FarmPlot.SIZE + 0.3 and absf(d.z) < FarmPlot.SIZE + 0.3:
+				return "Too close to another plot."
 	var reason := FarmLayout.no_dig_reason(pos)
 	if reason != "":
 		return reason
@@ -103,8 +112,8 @@ func placement_error(pos: Vector3) -> String:
 
 ## Dev scenarios: dig the rest of the garden grid.
 func fill_garden() -> void:
-	for i in range(plots.size(), GARDEN_GRID.size()):
-		add_plot(to_global(Vector3(GARDEN_GRID[i].x, 0, GARDEN_GRID[i].y)))
+	for i in range(plots.size(), layout.size()):
+		add_plot(to_global(Vector3(layout[i].x, 0, layout[i].y)))
 
 
 func add_plot(pos: Vector3) -> FarmPlot:
@@ -138,6 +147,8 @@ func _on_day_started(_day: int) -> void:
 		var e := p.daily_update(Clock.season(), Clock.raining, rng)
 		if e != "" and not (e in news):
 			news.append(e)
+	if not is_players:
+		return
 	var player: Player = get_tree().get_first_node_in_group("player")
 	for e in news:
 		player.say(e)

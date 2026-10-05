@@ -459,3 +459,54 @@ func test_keep_grain_as_seed() -> void:
 	eq(player.carry_count(), 2, "one sack fewer")
 	check("barley_seed" in Array(player.hotbar).map(func(x: StringName) -> String: return String(x)), "new seed lands on the hotbar")
 	_finish(w)
+
+
+## Wynn, the neighbour, farms a whole year on his own (instant mode: walking and work take no
+## time): tills, sows, harvests, sells, keeps himself fed, and ends the year better off.
+var _labels := {}
+
+
+func test_neighbour_farms_a_year() -> void:
+	var w := _world()
+	var wynn: Npc = w.get_node("Wynn")
+	var role: FarmerRole = wynn.role
+	var field: Field = w.get_node("WynnField")
+	wynn.instant = true
+	var start_gold := wynn.wallet.gold
+	var collapsed := [0]
+	wynn.needs.collapsed.connect(func(_r: String) -> void: collapsed[0] += 1)
+	var counts := {"sown": 0, "sold": 0, "harvest_tasks": 0}
+	var lowest_hunger := 100.0
+	for day in 24:
+		# A working day, one task at a time; each task takes half an hour of the clock.
+		var guard := 0
+		while Clock.hour() < 21.0 and guard < 200:
+			guard += 1
+			var t: Task = wynn._think()
+			if t == null:
+				Clock.advance(30.0)
+				continue
+			_labels[t.label] = int(_labels.get(t.label, 0)) + 1
+			if t.label.begins_with("Sowing"):
+				counts.sown += 1
+			if t.label.begins_with("Pulling") or t.label.begins_with("Reaping"):
+				counts.harvest_tasks += 1
+			t.start(wynn)
+			var g2 := 0
+			while not t.update(wynn, 0.1) and g2 < 50:
+				g2 += 1
+			Clock.advance(30.0)
+			lowest_hunger = minf(lowest_hunger, wynn.needs.hunger)
+		Clock.skip_to_hour(6.0)
+	print("WYNN year: ", counts, " gold %d -> %d, lowest hunger %.0f, labels seen: " % [start_gold, wynn.wallet.gold, lowest_hunger], _labels.keys())
+	check(counts.sown >= 4, "sowed several beds over the year (%d)" % counts.sown)
+	check(counts.harvest_tasks >= 6, "harvested (%d harvest jobs)" % counts.harvest_tasks)
+	check(wynn.wallet.gold > start_gold, "ended the year richer: %d → %d gold" % [start_gold, wynn.wallet.gold])
+	eq(collapsed[0], 0, "never collapsed")
+	check(lowest_hunger > 0.0, "never starved (lowest hunger %.0f)" % lowest_hunger)
+	var crops := 0
+	for p in field.plots:
+		if p.state.has_crop() or p.state.is_tilled():
+			crops += 1
+	check(crops > 0, "beds in use at year end")
+	_finish(w)
