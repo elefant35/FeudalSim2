@@ -241,23 +241,36 @@ func test_first_week_is_survivable() -> void:
 	n.free()
 
 
-func test_seed_kinds_share_one_hotbar_slot() -> void:
+func test_hotbar_is_player_arranged() -> void:
 	var w := _world()
 	var player: Player = w.player
-	player.inventory.add(&"barley_seed", 6)
-	player.inventory.add(&"wheat_seed", 6)
-	var seed_slots := 0
-	for id in player.hotbar:
-		if Items.item(id) and Items.item(id).kind == ItemData.Kind.SEED:
-			seed_slots += 1
-	eq(seed_slots, 1, "one seed slot")
-	var slot := player.hotbar.size() - 1
-	player.select_slot(slot)
-	var first := player.held()
-	player.select_slot(slot)
-	check(player.held() != first, "pressing the seed slot again changes seed")
-	check(Items.item(player.held()).kind == ItemData.Kind.SEED, "still holding seed")
+	eq(player.hotbar.size(), Player.HOTBAR_SIZE)
+	eq(player.hotbar[0], Player.HANDS, "slot 1 is hands")
+	eq(player.hotbar.slice(1, 4), [&"hoe", &"bucket", &"turnip_seed"], "starting kit auto-filled in order")
+	player.inventory.add(&"sickle")
+	eq(player.hotbar[4], &"sickle", "new tools go in the first free slot")
+	player.assign_slot(1, &"sickle")
+	eq(player.hotbar[1], &"sickle", "assigned")
+	eq(player.hotbar[4], &"hoe", "swapped with its old slot")
+	player.clear_slot(4)
+	eq(player.hotbar[4], &"", "cleared")
+	player.select_slot(4)
+	eq(player.held(), Player.HANDS, "an empty slot means bare hands")
+	player.assign_slot(5, &"bread")
+	eq(player.hotbar[5], &"", "food can't go on the hotbar")
+	# Using up seed keeps the slot (greyed) but leaves your hands empty.
+	player.select_slot(3)
+	player.inventory.remove(&"turnip_seed", player.inventory.count(&"turnip_seed"))
+	eq(player.hotbar[3], &"turnip_seed", "slot kept for when you buy more")
+	eq(player.held(), Player.HANDS, "nothing in hand")
+	# The layout survives a save.
+	var d: Dictionary = JSON.parse_string(JSON.stringify(player.to_dict()))
 	_finish(w)
+	var w2 := _world()
+	w2.player.from_dict(d)
+	eq(w2.player.hotbar[1], &"sickle", "layout restored")
+	eq(w2.player.hotbar[4], &"", "emptied slot stays empty after loading")
+	_finish(w2)
 
 
 func test_next_step_walks_through_the_grain_chain() -> void:

@@ -78,7 +78,7 @@ static func draw_meter(c: Control, center: Vector2, value: float, zone_from: flo
 ## A vertical fill bar to the right of the crosshair.
 static func draw_fill(c: Control, center: Vector2, value: float, label: String, color: Color,
 		target_from: float = -1.0, target_to: float = -1.0) -> void:
-	var r := Rect2(center + Vector2(60, -80), Vector2(16, 160))
+	var r := Rect2(center + Vector2(200, -60), Vector2(16, 150))
 	c.draw_rect(r.grow(3), Color(0.12, 0.09, 0.06, 0.85))
 	c.draw_rect(r, Color(0.32, 0.25, 0.17))
 	if target_from >= 0.0:

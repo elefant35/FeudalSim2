@@ -33,6 +33,7 @@ var _needs_box: PanelContainer
 var _hunger_bar := ProgressBar.new()
 var _energy_bar := ProgressBar.new()
 var _hotbar := HBoxContainer.new()
+var _held_label := Label.new()
 var _prompt_box := PanelContainer.new()
 var _prompt := Label.new()
 var _hint_box := PanelContainer.new()
@@ -108,6 +109,10 @@ func _ready() -> void:
 	# Bottom centre: hotbar.
 	_hotbar.add_theme_constant_override("separation", 6)
 	_root.add_child(_hotbar)
+	_held_label.add_theme_constant_override("outline_size", 6)
+	_held_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	_held_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_root.add_child(_held_label)
 
 	# Under the crosshair: what you're looking at / how to play the current minigame.
 	for pair: Array in [[_prompt_box, _prompt], [_hint_box, _hint]]:
@@ -214,7 +219,7 @@ func _process(delta: float) -> void:
 	_hint.text = (game.hint + "\n[Right-click] stop") if game != null else ""
 	var vs := _root.size
 	_place_centered(_prompt_box, prompt != "", vs, vs.y / 2.0 + 30.0, 640.0)
-	_place_centered(_hint_box, game != null, vs, vs.y / 2.0 + 118.0, 640.0)
+	_place_centered(_hint_box, game != null, vs, vs.y / 2.0 + 150.0, 640.0)
 	_toasts.size = Vector2(700, 0)
 	_toasts.position = Vector2((vs.x - 700) / 2.0, 14)
 	# Corners are placed by hand each frame (sizes change with their contents).
@@ -225,6 +230,9 @@ func _process(delta: float) -> void:
 	_hotbar.visible = _panel == null
 	_hotbar.reset_size()
 	_hotbar.position = Vector2(maxf((vs.x - _hotbar.size.x) / 2.0, _needs_box.size.x + 32.0), vs.y - _hotbar.size.y - 16)
+	_held_label.visible = _hotbar.visible
+	_held_label.size = Vector2(_hotbar.size.x, 0)
+	_held_label.position = _hotbar.position - Vector2(0, 30)
 	_overlay.queue_redraw()
 
 
@@ -274,41 +282,22 @@ func _refresh_hotbar() -> void:
 		c.queue_free()
 	for i in player.hotbar.size():
 		var id := player.hotbar[i]
-		var selected := i == player.held_index
-		var slot := PanelContainer.new()
-		var style := _style(Color(0.14, 0.1, 0.07, 0.9), 6, 6)
-		style.border_color = ACCENT if selected else Color(0.35, 0.27, 0.17)
-		style.set_border_width_all(3 if selected else 1)
-		slot.add_theme_stylebox_override("panel", style)
-		slot.custom_minimum_size = Vector2(104, 62)
-		var v := VBoxContainer.new()
-		v.add_theme_constant_override("separation", 0)
-		slot.add_child(v)
-		var key := Label.new()
-		key.text = str(i + 1)
-		key.add_theme_font_size_override("font_size", 14)
-		key.add_theme_color_override("font_color", ACCENT if selected else DIM)
-		v.add_child(key)
-		var name := Label.new()
-		name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		name.add_theme_font_size_override("font_size", 16)
-		name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		var tile := ItemTile.new()
+		tile.tile_size = 64.0
+		tile.slot = i
+		tile.key_text = str(i + 1)
+		tile.selected = i == player.held_index
 		var it := Items.item(id)
-		if id == Player.HANDS:
-			name.text = "Hands"
-		elif it.kind == ItemData.Kind.SEED:
-			var kinds := player.seed_kinds()
-			name.text = "%s seed ×%d" % [Items.crop(it.crop).display_name, player.inventory.count(id)]
-			if kinds.size() > 1:
-				name.text += "\n(%d of %d)" % [kinds.find(id) + 1, kinds.size()]
-			if kinds.size() > 1:
-				slot.tooltip_text = "Press %d again to change seed" % (i + 1)
-		elif it.kind == ItemData.Kind.TOOL:
-			name.text = it.display_name
-		else:
-			name.text = "%s ×%d" % [it.display_name, player.inventory.count(id)]
-		v.add_child(name)
-		_hotbar.add_child(slot)
+		var n := player.inventory.count(id) if it else 0
+		tile.dimmed = it != null and n == 0
+		tile.set_item(id, -1, n if it and it.kind != ItemData.Kind.TOOL else 0)
+		_hotbar.add_child(tile)
+	var held := player.held()
+	if held == Player.HANDS:
+		_held_label.text = "Hands"
+	else:
+		var hi := Items.item(held)
+		_held_label.text = Items.name_of(held) + ("" if hi.kind == ItemData.Kind.TOOL else "  ×%d" % player.inventory.count(held))
 
 
 func toast(text: String) -> void:
@@ -467,35 +456,105 @@ func open_pause_menu() -> void:
 const CONTROLS_TEXT := """WASD move · Shift run · Space jump · Mouse look
 Left click: use what's in your hand · Right click: stop
 E interact · F eat · Tab pack · G field guide · T time speed
-1-9 or wheel: choose a tool (press the seed slot again to change seed)
+1-9 or wheel: choose a hotbar slot · Tab: arrange your hotbar
 Sleep in your bed to end the day; the game saves when you sleep."""
 
 
+var _pack_selected: StringName = &""
+
+
+## The pack: every item as an icon tile, plus your hotbar to arrange. Drag a tool or seed onto
+## a hotbar slot (or click it, then click a slot). Right-click a slot to empty it; right-click
+## or double-click food to eat it.
 func open_inventory() -> void:
-	var v := _open_panel("inventory", "Your pack")
+	var v := _open_panel("inventory", "Your pack", 640.0)
+	v.add_child(_label("Drag tools and seed onto your hotbar (or click one, then a slot). Right-click a slot to empty it. Double-click or right-click food to eat.", 15, DIM))
+	var grid := GridContainer.new()
+	grid.columns = 8
+	grid.add_theme_constant_override("h_separation", 6)
+	grid.add_theme_constant_override("v_separation", 6)
+	v.add_child(grid)
 	var stacks := player.inventory.stacks()
+	for st in stacks:
+		var tile := ItemTile.new()
+		tile.interactive = true
+		tile.draggable = Items.item(st.id) != null and Items.item(st.id).hotbar
+		tile.accepts_drops = true    # dropping a hotbar item back on the pack empties its slot
+		tile.selected = st.id == _pack_selected
+		tile.set_item(st.id, st.quality, st.count)
+		tile.pressed.connect(_on_pack_tile)
+		tile.dropped.connect(_on_drop_on_pack)
+		grid.add_child(tile)
 	if stacks.is_empty():
 		v.add_child(_label("Empty."))
-	for s in stacks:
-		var it := Items.item(s.id)
-		var row := HBoxContainer.new()
-		var text := VBoxContainer.new()
-		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		text.add_child(_label("%s  ×%d" % [Items.name_of(s.id, s.quality), s.count]))
-		if it and it.description != "":
-			text.add_child(_label(it.description, 15, DIM))
-		row.add_child(text)
-		if it and it.food_value > 0.0:
-			var b := Button.new()
-			b.text = "Eat (+%d)" % roundi(it.food_value)
-			b.focus_mode = Control.FOCUS_NONE
-			b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			b.pressed.connect(func() -> void:
-				player.eat(s.id, s.quality)
-				open_inventory())
-			row.add_child(b)
-		v.add_child(row)
+	v.add_child(_label("Hotbar  (keys 1–9; slot 1 is always your hands)", 17, ACCENT))
+	var bar := HBoxContainer.new()
+	bar.add_theme_constant_override("separation", 6)
+	v.add_child(bar)
+	for i in player.hotbar.size():
+		var id := player.hotbar[i]
+		var tile := ItemTile.new()
+		tile.interactive = true
+		tile.slot = i
+		tile.key_text = str(i + 1)
+		tile.tile_size = 64.0
+		tile.draggable = i > 0
+		tile.accepts_drops = i > 0
+		var it := Items.item(id)
+		tile.dimmed = it != null and not player.inventory.has(id)
+		tile.set_item(id, -1, player.inventory.count(id) if it and it.kind != ItemData.Kind.TOOL else 0)
+		tile.pressed.connect(_on_hotbar_tile)
+		tile.dropped.connect(_on_drop_on_slot)
+		bar.add_child(tile)
+	var info := ""
+	if _pack_selected != &"" and Items.item(_pack_selected):
+		var it := Items.item(_pack_selected)
+		info = "%s: %s" % [it.display_name, it.description]
+		if it.hotbar:
+			info += "  (Click a hotbar slot to put it there.)"
+	v.add_child(_label(info, 16, INK))
 	_footer_button("Close  [Tab]")
+
+
+func _refresh_pack() -> void:
+	if _panel_kind == "inventory":
+		open_inventory.call_deferred()
+
+
+func _on_pack_tile(tile: ItemTile, button: int, double: bool) -> void:
+	var it := Items.item(tile.id)
+	if it and it.food_value > 0.0 and (button == MOUSE_BUTTON_RIGHT or double):
+		player.eat(tile.id, tile.quality)
+		_refresh_pack()
+		return
+	if button == MOUSE_BUTTON_LEFT:
+		_pack_selected = &"" if _pack_selected == tile.id else tile.id
+		Sfx.play("ui_click", -8.0, 0.0)
+		_refresh_pack()
+
+
+func _on_hotbar_tile(tile: ItemTile, button: int, _double: bool) -> void:
+	if tile.slot <= 0:
+		return
+	if button == MOUSE_BUTTON_RIGHT:
+		player.clear_slot(tile.slot)
+	elif _pack_selected != &"" and Items.item(_pack_selected) and Items.item(_pack_selected).hotbar:
+		player.assign_slot(tile.slot, _pack_selected)
+		_pack_selected = &""
+	Sfx.play("ui_click", -8.0, 0.0)
+	_refresh_pack()
+
+
+func _on_drop_on_slot(tile: ItemTile, data: Dictionary) -> void:
+	player.assign_slot(tile.slot, StringName(data.id))
+	Sfx.play("ui_click", -8.0, 0.0)
+	_refresh_pack()
+
+
+func _on_drop_on_pack(_tile: ItemTile, data: Dictionary) -> void:
+	if int(data.get("from_slot", -1)) > 0:
+		player.clear_slot(int(data.from_slot))
+		_refresh_pack()
 
 
 func open_guide() -> void:

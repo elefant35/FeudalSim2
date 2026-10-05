@@ -42,6 +42,8 @@ var health: float = 1.0
 var evenness: float = 0.0
 var ripe_days: int = 0
 var last_event: String = ""
+## What hurt the crop at the last overnight update (shown to the player).
+var stress: Array[String] = []
 
 
 func _init() -> void:
@@ -259,6 +261,7 @@ func _germinate() -> void:
 
 
 func _grow(season: int, raining: bool, rng: RandomNumberGenerator) -> void:
+	stress.clear()
 	if season == Clock.Season.WINTER and not crop.hardy:
 		var killed := false
 		for i in CELLS:
@@ -274,9 +277,13 @@ func _grow(season: int, raining: bool, rng: RandomNumberGenerator) -> void:
 	if moisture < DRY:
 		rate *= 0.4
 		health -= 0.12
+		stress.append("dry soil (growth slowed)")
 	elif moisture > SOGGY:
 		health -= 0.03
+		stress.append("waterlogged")
 	health -= 0.035 * weeds.size()
+	if not weeds.is_empty():
+		stress.append("weeds")
 
 	if crop.gets_caterpillars and growth >= 1.0:
 		for i in CELLS:
@@ -289,6 +296,8 @@ func _grow(season: int, raining: bool, rng: RandomNumberGenerator) -> void:
 				plants[i] = Plant.DEAD
 				last_event = "Caterpillars ate a %s to nothing." % crop.display_name.to_lower()
 		health -= 0.025 * total
+		if total > 0:
+			stress.append("caterpillars")
 
 	_spread_blight(raining, rng)
 
@@ -296,6 +305,7 @@ func _grow(season: int, raining: bool, rng: RandomNumberGenerator) -> void:
 		ripe_days += 1
 		if ripe_days > ROT_AFTER_DAYS:
 			health -= 0.1
+			stress.append("left too long")
 			last_event = "The %s is spoiling in the field." % crop.display_name.to_lower()
 	else:
 		growth += rate
@@ -359,6 +369,7 @@ func _finish_crop() -> void:
 	health = 1.0
 	evenness = 0.0
 	ripe_days = 0
+	stress.clear()
 	till_needed = STUBBLE_TILL
 	till_progress = 0.0
 	till_quality = 0.0

@@ -73,5 +73,5 @@ func draw(c: Control, center: Vector2) -> void:
 	var ring := lerpf(90.0, target, _phase())
 	c.draw_arc(center, target, 0, TAU, 32, Color(0.45, 0.75, 0.3), 4.0)
 	c.draw_arc(center, ring, 0, TAU, 40, Color(1, 0.95, 0.8, 0.85), 3.0)
-	c.draw_string(ThemeDB.fallback_font, center + Vector2(-160, 120), "%s   ·   sheaf %d%%" % [_last, roundi(floor_.current_progress() * 100.0)],
+	c.draw_string(ThemeDB.fallback_font, center + Vector2(-160, 125), "%s   ·   sheaf %d%%" % [_last, roundi(floor_.current_progress() * 100.0)],
 		HORIZONTAL_ALIGNMENT_CENTER, 320, 18, Color(1, 0.96, 0.85))

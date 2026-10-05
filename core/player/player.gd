@@ -28,9 +28,10 @@ var camera := Camera3D.new()
 var ray := RayCast3D.new()
 var viewmodel: Viewmodel
 
-var hotbar: Array[StringName] = [HANDS]
+const HOTBAR_SIZE := 9
+## Slot 0 is always bare hands; slots 1..8 hold whatever the player puts there (or &"").
+var hotbar: Array[StringName] = []
 var held_index: int = 0
-var seed_choice: StringName = &""   ## Which seed the shared seed slot holds.
 var minigame: Minigame = null
 var ui_open: bool = false
 var frozen: bool = false   ## Sleeping, fading, etc.
@@ -38,6 +39,7 @@ var target: Node = null
 var target_point: Vector3 = Vector3.ZERO
 ## Per-tool state that outlives a minigame (e.g. how much water is in the bucket).
 var tool_state: Dictionary = {}
+var dev_walk_seconds: float = 0.0   ## Dev runs: walk forward on our own for this long.
 
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _step_distance: float = 0.0
@@ -49,13 +51,23 @@ func _ready() -> void:
 	add_to_group("player")
 	for c: Node in [needs, wallet, inventory]:
 		add_child(c)
+	# The body rides on a short downward "foot" ray: the capsule sits STEP_HEIGHT off the
+	# ground, so door sills, plot edges and other small lips are simply walked over.
 	var shape := CollisionShape3D.new()
 	var capsule := CapsuleShape3D.new()
 	capsule.radius = 0.3
-	capsule.height = 1.75
+	capsule.height = 1.75 - STEP_HEIGHT
 	shape.shape = capsule
-	shape.position.y = 0.875
+	shape.position.y = STEP_HEIGHT + capsule.height / 2.0
 	add_child(shape)
+	var foot := CollisionShape3D.new()
+	var ray_shape := SeparationRayShape3D.new()
+	ray_shape.length = STEP_HEIGHT + 0.05
+	foot.shape = ray_shape
+	foot.position.y = STEP_HEIGHT + 0.05
+	foot.rotation.x = PI / 2   # the ray casts along +Z; this points it straight down
+	add_child(foot)
+	floor_snap_length = STEP_HEIGHT + 0.1
 	head.position.y = EYE_HEIGHT
 	add_child(head)
 	camera.fov = 72.0
@@ -68,13 +80,19 @@ func _ready() -> void:
 	camera.add_child(ray)
 	viewmodel = Viewmodel.new()
 	camera.add_child(viewmodel)
-	inventory.changed.connect(_rebuild_hotbar)
-	_rebuild_hotbar()
+	hotbar.resize(HOTBAR_SIZE)
+	hotbar.fill(&"")
+	hotbar[0] = HANDS
+	inventory.changed.connect(_on_inventory_changed)
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
+## What's in hand: the selected slot's item, or bare hands if the slot is empty or used up.
 func held() -> StringName:
-	return hotbar[held_index]
+	var id := hotbar[held_index]
+	if id == &"" or id == HANDS or not inventory.has(id):
+		return HANDS
+	return id
 
 
 ## Seed types carried, in a stable order.
@@ -83,53 +101,59 @@ func seed_kinds() -> Array[StringName]:
 	for id: StringName in [&"turnip_seed", &"cabbage_seed", &"barley_seed", &"wheat_seed"]:
 		if inventory.has(id):
 			out.append(id)
-	for s in inventory.stacks():
-		var it := Items.item(s.id)
-		if it and it.kind == ItemData.Kind.SEED and not (s.id in out):
-			out.append(s.id)
+	for st in inventory.stacks():
+		var it := Items.item(st.id)
+		if it and it.kind == ItemData.Kind.SEED and not (st.id in out):
+			out.append(st.id)
 	return out
 
 
 func select_slot(i: int) -> void:
 	if i < 0 or i >= hotbar.size() or minigame != null:
 		return
-	var it := Items.item(hotbar[i])
-	if i == held_index and it and it.kind == ItemData.Kind.SEED:
-		# Pressing the seed slot again picks the next kind of seed.
-		var kinds := seed_kinds()
-		if kinds.size() > 1:
-			seed_choice = kinds[(kinds.find(seed_choice) + 1) % kinds.size()]
-			hotbar[i] = seed_choice
-			viewmodel.set_held(held())
-			say("%s selected." % Items.name_of(seed_choice))
-			hotbar_changed.emit()
-		return
 	held_index = i
 	viewmodel.set_held(held())
 	hotbar_changed.emit()
 
 
-func _rebuild_hotbar() -> void:
-	var current := held()
-	hotbar = [HANDS]
-	var tools: Array[StringName] = []
-	for s in inventory.stacks():
-		var it := Items.item(s.id)
-		if it == null or not it.hotbar or it.kind == ItemData.Kind.SEED or s.id in tools:
-			continue
-		tools.append(s.id)
-	var order := [&"hoe", &"bucket", &"sickle", &"flail", &"winnowing_basket", &"scarecrow"]
-	tools.sort_custom(func(a: StringName, b: StringName) -> bool: return order.find(a) < order.find(b))
-	hotbar.append_array(tools)
-	var kinds := seed_kinds()
-	if not kinds.is_empty():
-		if not (seed_choice in kinds):
-			seed_choice = kinds[0]
-		hotbar.append(seed_choice)
-	var was_seed := Items.item(current) != null and Items.item(current).kind == ItemData.Kind.SEED
-	held_index = hotbar.find(current)
-	if held_index < 0:
-		held_index = hotbar.size() - 1 if was_seed and not kinds.is_empty() else 0
+## Puts an item in a hotbar slot (1..8). If it's already in another slot, the two swap.
+func assign_slot(slot: int, id: StringName) -> void:
+	if slot <= 0 or slot >= HOTBAR_SIZE:
+		return
+	var it := Items.item(id)
+	if it == null or not it.hotbar:
+		return
+	var old := hotbar.find(id)
+	if old > 0:
+		hotbar[old] = hotbar[slot]
+	hotbar[slot] = id
+	viewmodel.set_held(held())
+	hotbar_changed.emit()
+
+
+func clear_slot(slot: int) -> void:
+	if slot <= 0 or slot >= HOTBAR_SIZE:
+		return
+	hotbar[slot] = &""
+	viewmodel.set_held(held())
+	hotbar_changed.emit()
+
+
+## Newly acquired tools and seed go into the first free slot (the player can rearrange them).
+var _had: Dictionary = {}
+
+
+func _on_inventory_changed() -> void:
+	var now := {}
+	for st in inventory.stacks():
+		now[st.id] = true
+	for id: StringName in now:
+		var it := Items.item(id)
+		if not _had.has(id) and it and it.hotbar and not (id in hotbar):
+			var free := hotbar.find(&"")
+			if free > 0:
+				hotbar[free] = id
+	_had = now
 	viewmodel.set_held(held())
 	hotbar_changed.emit()
 
@@ -246,6 +270,11 @@ func _physics_process(delta: float) -> void:
 	if can_act() and (minigame == null or not minigame.locks_movement):
 		input = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 		running = Input.is_action_pressed("sprint") and needs.energy > 5.0
+	if dev_walk_seconds > 0.0:
+		dev_walk_seconds -= delta
+		input = Vector2(0, -1)
+		if dev_walk_seconds <= 0.0:
+			print("DEV walked to ", global_position)
 	var speed := (RUN_SPEED if running else WALK_SPEED) * needs.speed_factor()
 	var dir := (transform.basis * Vector3(input.x, 0, input.y)).normalized()
 	velocity.x = move_toward(velocity.x, dir.x * speed, 40.0 * delta)
@@ -254,8 +283,6 @@ func _physics_process(delta: float) -> void:
 		velocity.y -= _gravity * delta
 	elif can_act() and minigame == null and Input.is_action_just_pressed("jump"):
 		velocity.y = JUMP_VELOCITY
-	if is_on_floor():
-		_try_step(delta)
 	move_and_slide()
 
 	var horizontal := Vector2(velocity.x, velocity.z).length()
@@ -269,28 +296,6 @@ func _physics_process(delta: float) -> void:
 	viewmodel.set_walk(horizontal / RUN_SPEED if is_on_floor() else 0.0)
 	if minigame != null:
 		minigame.update(delta)
-
-
-## If something low blocks the way, lift the player onto it (no jumping over thresholds).
-func _try_step(delta: float) -> void:
-	var horiz := Vector3(velocity.x, 0, velocity.z)
-	if horiz.length() < 0.1:
-		return
-	var ahead := horiz.normalized() * maxf(horiz.length() * delta, 0.08)
-	if not test_move(global_transform, ahead):
-		return
-	var up := Vector3.UP * STEP_HEIGHT
-	if test_move(global_transform, up):
-		return
-	var raised := global_transform.translated(up)
-	if test_move(raised, ahead):
-		return
-	var hit := KinematicCollision3D.new()
-	var over := raised.translated(ahead)
-	if test_move(over, -up, hit):
-		var rise := STEP_HEIGHT - hit.get_travel().length()
-		if rise > 0.01:
-			global_position = over.origin + hit.get_travel() + Vector3.UP * 0.01
 
 
 func _footstep_bank() -> String:
@@ -327,7 +332,7 @@ func to_dict() -> Dictionary:
 	return {
 		"pos": [global_position.x, global_position.y, global_position.z], "yaw": rotation.y,
 		"needs": needs.to_dict(), "gold": wallet.gold, "inventory": inventory.to_dict(),
-		"tool_state": tool_state,
+		"tool_state": tool_state, "hotbar": hotbar,
 	}
 
 
@@ -339,4 +344,14 @@ func from_dict(d: Dictionary) -> void:
 	wallet.changed.emit(wallet.gold)
 	inventory.from_dict(d.inventory)
 	tool_state = d.get("tool_state", {})
+	if d.has("hotbar"):
+		for i in mini(HOTBAR_SIZE, d.hotbar.size()):
+			hotbar[i] = StringName(d.hotbar[i])
+		hotbar[0] = HANDS
+		# Respect the saved layout: don't auto-fill slots the player emptied on purpose.
+		_had.clear()
+		for st in inventory.stacks():
+			_had[st.id] = true
+	viewmodel.set_held(held())
+	hotbar_changed.emit()
 	set_bucket_water(bucket_water())

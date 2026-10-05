@@ -13,6 +13,7 @@ config/features=PackedStringArray("4.7", "Forward Plus")
 Clock="*res://core/clock.gd"
 Items="*res://core/items.gd"
 Sfx="*res://core/sfx.gd"
+Icons="*res://core/icons.gd"
 
 [display]
 

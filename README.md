@@ -48,6 +48,16 @@ turnip seed, a small store of food (five loaves, four turnips) and 12 gold. Ever
    release to toss when the pennant shows a gust.
 7. Sell produce and clean grain at the **Produce Bought** cart. Better quality earns more.
 
+**What hurts crops.** Look at a plot to see its health and what hurt it overnight. Quality is mostly
+health (60%), plus how evenly you sowed (25%) and how well you tilled (15%); better quality sells for more.
+- *Dry soil:* growth drops to 40% that day and health falls 12%.
+- *Weeds:* each weed costs 3.5% health a day, up to 5 weeds per plot. A snapped root regrows the next day.
+- *Crows:* they eat sown seed before it sprouts. Fewer seeds sprout, so you get fewer plants and less even
+  cover.
+- *Caterpillars (cabbage):* each one costs 2.5% health a day; three on one cabbage kill it.
+- *Blight:* a blighted plant dies after two days and can spread to its neighbours. Pull it to stop it.
+- *Leaving a crop ripe for more than 4 days* costs 10% health a day.
+
 **Staying alive.** Hunger and energy drain through the day. **F** eats the plainest food you carry, or eat
 from your pack (**Tab**). Turnips are edible raw, and bread is sold at the stall. Sleep in your bed (E)
 after 18:00 to end the day; **the game saves whenever you sleep** (and from the Esc menu). If you work
@@ -70,9 +80,9 @@ or the mini-games. At 1× a day lasts about 15 minutes.
 | Right click | Stop the current task |
 | E | Interact (bed, stall, cart, threshing floor) |
 | F | Eat |
-| Tab | Pack (inventory) |
+| Tab | Pack: your items as icons. Drag tools and seed onto the hotbar to choose what's at hand |
 | G | Field guide: what to sow this season, and every crop's steps from field to market |
-| 1–9, mouse wheel | Choose tool. All your seed shares one slot; press its number again to switch seed |
+| 1–9, mouse wheel | Choose a hotbar slot (slot 1 is always bare hands) |
 | T | Time speed |
 | Esc | Menu (save, new game, quit) |
 

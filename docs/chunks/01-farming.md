@@ -128,6 +128,19 @@ field of plots, a threshing floor, a tool stall (buy seeds, tools, bread) and a 
   - prompts on cut stalks say to switch to hands and bind them
 - **Blight:** the misleading "burn it" text is gone; pulling a blighted plant is all it takes.
 
+## Playtest 3 feedback (fixed)
+
+- **Pack and hotbar:**
+  - a visual pack: icon tiles rendered from the items' own 3D models, with counts and quality marks
+  - you arrange the hotbar yourself (drag, or click then a slot; right-click to empty); slot 1 is
+    always bare hands
+  - new tools and seed fill free slots automatically, and the layout is saved
+- **Mini-games:** their bars no longer overlap, and the hint sits lower.
+- **Walking:** the player rides on a short foot ray, so door sills and small lips are walked over
+  (checked by a scripted walk through the cottage door). The old step hack is gone.
+- **Crop health:** a plot shows its health and what hurt it overnight (dry soil, weeds, caterpillars,
+  waterlogging, left too long).
+
 ## Not verified yet (needs Tyler's hands)
 
 Every mini-game is exercised by tests and screenshots, but none of them has had a real mouse click.

@@ -12,6 +12,7 @@ extends Node
 ## --hold=slot     select a hotbar slot
 ## --click         left-click whatever is under the crosshair (starts its minigame)
 ## --interact      press E on whatever is under the crosshair
+## --walk=seconds  walk straight ahead (prints where you end up)
 ## --open=panel    open a panel: guide, pack, pause
 ## --eat           eat something just before the screenshot
 ## --newgame       after a second, run New Game once (checks a clean scene reload)
@@ -52,6 +53,8 @@ func apply(world: Node3D, player: Player) -> void:
 		var v := String(args.look).split_floats(",")
 		player.rotation.y = deg_to_rad(v[0])
 		player.head.rotation.x = deg_to_rad(v[1] if v.size() > 1 else 0.0)
+	if args.has("walk"):
+		player.dev_walk_seconds = float(args.walk)
 	if args.has("hold"):
 		player.select_slot(int(args.hold))
 	if args.has("newgame") and not _reloaded:

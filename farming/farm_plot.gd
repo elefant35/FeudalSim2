@@ -261,7 +261,10 @@ func status_text() -> String:
 		lines.append("Sown with %s · %d/9 well covered" % [state.crop.display_name.to_lower(), good])
 	else:
 		var growing := "ripe!" if state.is_ripe() else "%d%% grown" % roundi(state.growth_fraction() * 100.0)
-		lines.append("%s · %s · %s quality" % [state.crop.display_name, growing, Items.QUALITY_NAMES[state.quality()].to_lower()])
+		lines.append("%s · %s · %s quality (health %d%%)" % [state.crop.display_name, growing,
+			Items.QUALITY_NAMES[state.quality()].to_lower(), roundi(state.health * 100.0)])
+		if not state.stress.is_empty():
+			lines.append("Hurt overnight by: " + ", ".join(state.stress))
 	var soil := "dry" if state.moisture < PlotState.DRY else ("soggy" if state.moisture > PlotState.SOGGY else ("damp" if state.moisture < 0.6 else "moist"))
 	var extra := "Soil %s" % soil
 	if not state.weeds.is_empty():
