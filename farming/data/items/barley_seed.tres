@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"barley_seed"
 display_name = "Barley seed"
-description = "Sow in spring. Ready in about 5 days. Frost kills it."
+description = "Sow in spring. Ready in about 5 days. Frost kills it. Clean barley can be kept as seed."
 kind = 1
 buy_price = 5
 buy_quantity = 6

@@ -2,7 +2,8 @@ class_name ThreshingFloor
 extends StaticBody3D
 ## Where grain is beaten from the sheaves (flail) and cleaned of chaff (winnowing basket).
 ## Sheaves are carried here and laid out (E); threshed grain stays on the floor as a heap;
-## winnowed grain goes into sacks beside the floor, ready to carry off. The pennant shows the wind.
+## each winnowed measure is bagged and set beside the floor as a pile of sacks, ready to carry
+## off (it's an ordinary pile: E picks up an armful). The pennant shows the wind.
 
 const CAPACITY := 6
 const SHEAF_TO_CHAFF := {&"barley_sheaf": &"barley_chaff", &"wheat_sheaf": &"wheat_chaff"}
@@ -10,13 +11,13 @@ const SHEAF_TO_CHAFF := {&"barley_sheaf": &"barley_chaff", &"wheat_sheaf": &"whe
 var wind: float = 0.0
 var sheaves: Array[Dictionary] = []    # [{id, quality, progress}]
 var heap := Inventory.new()            ## Threshed, unwinnowed grain on the floor.
-var sacks := Inventory.new()           ## Clean grain, bagged beside the floor.
+## Where the sacks of clean grain are set down, beside the floor (local; one spot per grain).
+const SACK_SPOTS := {&"barley": Vector3(-1.5, 0, -3.1), &"wheat": Vector3(0.2, 0, -3.3)}
 var _sheaf_nodes: Array[Node3D] = []
 var _noise := FastNoiseLite.new()
 var _t := 0.0
 var _pennant: Node3D
 var _pile: Node3D
-var _sack_nodes := Node3D.new()
 var _shown_wind := 0.0
 var _flap_phase := 0.0
 
@@ -44,9 +45,6 @@ func _ready() -> void:
 	_pile.visible = false
 	add_child(_pile)
 	add_child(heap)
-	add_child(sacks)
-	_sack_nodes.position = Vector3(-1.6, 0.0, -2.9)   # just off the floor's edge
-	add_child(_sack_nodes)
 	_noise.frequency = 0.35
 	_noise.seed = 5
 
@@ -102,13 +100,6 @@ func heap_count() -> int:
 	return n
 
 
-func sack_count() -> int:
-	var n := 0
-	for st in sacks.stacks():
-		n += st.count
-	return n
-
-
 ## The next measure of unwinnowed grain to clean (best first), or &"" if none. Takes it off the heap.
 func take_from_heap() -> Dictionary:
 	for id: StringName in SHEAF_TO_CHAFF.values():
@@ -124,18 +115,18 @@ func return_to_heap(id: StringName, quality: int) -> void:
 	_refresh()
 
 
-func add_clean(id: StringName, quality: int) -> void:
-	sacks.add(id, 1, quality)
-	_refresh()
+## Bags a measure of clean grain and sets it beside the floor. Returns the pile it went on.
+func add_clean(id: StringName, quality: int) -> ProducePile:
+	var piles: Piles = get_tree().get_first_node_in_group("piles")
+	var units: Array[int] = [quality]
+	return piles.put(id, units, to_global(SACK_SPOTS.get(id, Vector3(-1.5, 0, -3.1))))
 
 
 func get_prompt(player: Player) -> String:
 	var lines: Array[String] = ["Threshing floor · %d/%d sheaves laid" % [sheaves.size(), CAPACITY]]
 	if heap_count() > 0:
 		lines[0] += " · %d threshed to winnow" % heap_count()
-	if sack_count() > 0:
-		lines[0] += " · %d sacks of clean grain" % sack_count()
-	lines.append("Lay sheaves (E)  →  thresh (flail)  →  winnow (basket)  →  carry off the sacks (E)")
+	lines.append("Lay sheaves (E)  →  thresh (flail)  →  winnow (basket)  →  sacks are set beside the floor")
 	var held := player.held()
 	if held == Player.CARRYING:
 		if SHEAF_TO_CHAFF.has(player.carry_id):
@@ -146,8 +137,6 @@ func get_prompt(player: Player) -> String:
 		lines.append("[Click] Thresh in rhythm" if has_sheaves() else "Bring sheaves here to thresh them.")
 	elif held == &"winnowing_basket":
 		lines.append("[Hold left, release to toss] Winnow" if heap_count() > 0 else "Thresh some sheaves first.")
-	elif sack_count() > 0 and held != Player.PULLING:
-		lines.append("[E] Pick up sacks of clean grain")
 	elif has_sheaves():
 		lines.append("Hold your flail to thresh." if player.inventory.has(&"flail") else "You need a flail to thresh (tool stall).")
 	elif heap_count() > 0:
@@ -171,20 +160,6 @@ func interact(player: Player) -> void:
 				player.pick_up(id, q)
 		Sfx.play_at("rustle", global_position)
 		player.say("You lay out %d sheaf%s." % [laid, "" if laid == 1 else "s"] if laid > 0 else "The floor is full. Thresh what's here first.")
-		_refresh()
-		return
-	if sack_count() > 0:
-		var took := 0
-		for st in sacks.stacks():
-			while player.carry_space(st.id) > 0:
-				var q := sacks.take_one(st.id, true)
-				if q < -1:
-					break
-				player.pick_up(st.id, q)
-				took += 1
-			if took > 0:
-				break
-		Sfx.play_at("rustle", global_position)
 		_refresh()
 
 
@@ -211,17 +186,11 @@ func _refresh() -> void:
 	var h := heap_count()
 	_pile.visible = h > 0
 	_pile.scale = Vector3.ONE * clampf(0.5 + h * 0.12, 0.5, 1.6)
-	for c in _sack_nodes.get_children():
-		c.queue_free()
-	for i in mini(sack_count(), 12):
-		var m := Models.make(&"grain_sack")
-		m.position = Vector3((i % 4) * 0.45, (i / 4) * 0.55, 0.0)
-		m.rotation.y = i * 0.7
-		_sack_nodes.add_child(m)
+
 
 
 func to_dict() -> Dictionary:
-	return {"sheaves": sheaves, "heap": heap.to_dict(), "sacks": sacks.to_dict()}
+	return {"sheaves": sheaves, "heap": heap.to_dict()}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -229,5 +198,4 @@ func from_dict(d: Dictionary) -> void:
 	for s: Dictionary in d.get("sheaves", []):
 		sheaves.append({"id": String(s.id), "quality": int(s.quality), "progress": float(s.progress)})
 	heap.from_dict(d.get("heap", {}))
-	sacks.from_dict(d.get("sacks", {}))
 	_refresh()

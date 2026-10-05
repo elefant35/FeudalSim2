@@ -16,3 +16,5 @@ harvest = 0
 gets_caterpillars = true
 blight_chance = 0.005
 look = &"cabbage"
+bolt_days = 3
+bolt_seed = 2

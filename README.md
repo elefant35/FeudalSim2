@@ -49,13 +49,19 @@ turnip seed, a small store of food (five loaves, four turnips) and 12 gold. Ever
    grass as a pile (sheaves stack flat). E on a pile or the cart picks an armful back up. Your pack holds 6 produce to
    eat. While your arms are full, you can't use tools.
 7. Carry sheaves to the **threshing floor** (north-west of the house) and press E to lay them out. Thresh
-   with the **flail**, clicking as the ring closes; the grain stays on the floor. Then **winnow** with the
-   basket: hold to lift and release to toss when the pennant shows a gust. Clean grain goes into sacks
-   beside the floor; pick them up with E.
+   with the **flail**: move the mouse up to raise it overhead, then swing it down hard onto the sheaf (the
+   faster the swing, the harder the blow). The grain stays on the floor. Then **winnow** with the basket:
+   hold to lift and release to toss when the pennant shows a gust. Each clean measure is bagged and set
+   beside the floor as a pile of sacks; pick them up with E.
    **Barrels** (sold at the stall) hold 24 of anything: fill one with E while carrying, open it with E
    to take things out or lift it (contents and all), set it down anywhere, or stand it in the handcart.
 8. Load the cart, grab its handles (**E** at the front) and pull it down the lane. Park it beside the
    **Produce Bought** cart and sell straight from it. Better quality earns more.
+
+**Saving seed.** Leave a ripe turnip or cabbage in the ground and after 3 days it bolts: a yellow
+flowering stalk shoots up. Pull it then for 2 handfuls of seed (instead of the vegetable). Barley and wheat
+are their own seed: while carrying a sack of clean grain, open your pack (Tab) and keep it as seed
+(6 handfuls).
 
 **What hurts crops.** Look at a plot to see its health and what hurt it overnight. Quality is mostly
 health (60%), plus how evenly you sowed (25%) and how well you tilled (15%); better quality sells for more.
@@ -66,7 +72,7 @@ health (60%), plus how evenly you sowed (25%) and how well you tilled (15%); bet
   cover.
 - *Caterpillars (cabbage):* each one costs 2.5% health a day; three on one cabbage kill it.
 - *Blight:* a blighted plant dies after two days and can spread to its neighbours. Pull it to stop it.
-- *Leaving a crop ripe for more than 4 days* costs 10% health a day.
+- *Leaving grain ripe for more than 4 days* costs 10% health a day (root crops go to seed instead).
 
 **Staying alive.** Hunger and energy drain through the day. **F** eats the plainest food you carry, or eat
 from your pack (**Tab**). Turnips are edible raw, and bread is sold at the stall. Sleep in your bed (E)

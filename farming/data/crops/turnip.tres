@@ -16,3 +16,5 @@ harvest = 0
 gets_caterpillars = false
 blight_chance = 0.004
 look = &"turnip"
+bolt_days = 3
+bolt_seed = 2

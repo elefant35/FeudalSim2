@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"cabbage_seed"
 display_name = "Cabbage seed"
-description = "Sow in spring or summer. Ready in about 5 days. Watch for caterpillars."
+description = "Sow in spring or summer. Ready in about 5 days. Watch for caterpillars. Leave a ripe cabbage in the ground and it goes to seed."
 kind = 1
 buy_price = 6
 buy_quantity = 6

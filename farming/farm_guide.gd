@@ -69,21 +69,26 @@ static func next_step(player: Player, field: Field, floor_: ThreshingFloor, pile
 		if not inv.has(&"winnowing_basket"):
 			return "Buy a winnowing basket at Tools & Seed to clean the threshed grain."
 		return "Winnow: hold the basket at the threshing floor; release to toss when the pennant gusts."
-	if floor_.sack_count() > 0:
-		return "Pick up the sacks of clean grain by the threshing floor (E) and load them into the handcart."
 	var sheaf_piles := 0
 	var produce_piles := 0
+	var grain_piles := 0
 	for pile in piles.all_piles():
 		if FarmGuide.SHEAVES.has(pile.id):
 			sheaf_piles += 1
+		elif FarmGuide.CLEAN.has(pile.id):
+			grain_piles += 1
 		else:
 			produce_piles += 1
+	if grain_piles > 0:
+		return "Pick up the sacks of clean grain beside the threshing floor (E) and take them to the handcart or buyer."
 	if sheaf_piles > 0:
 		return "Carry the sheaves from your stack to the threshing floor (E to pick up, E at the floor to lay them)."
 	if ripe_grain:
 		if not inv.has(&"sickle"):
 			return "Your %s is ripe. Buy a sickle at Tools & Seed to reap it." % ripe_grain.state.crop.display_name.to_lower()
 		return "Your %s is ripe: hold the sickle and sweep across it." % ripe_grain.state.crop.display_name.to_lower()
+	if ripe_roots and ripe_roots.state.is_bolted():
+		return "Your %ss have gone to seed: pull them to gather seed for next time." % ripe_roots.state.crop.display_name.to_lower()
 	if ripe_roots:
 		return "Your %s is ripe: pull it by hand (hold left click). It goes into your arms." % ripe_roots.state.crop.display_name.to_lower()
 	if produce_piles > 0:
@@ -116,7 +121,9 @@ static func sections() -> Array:
 		["Root crops: turnips and cabbage",
 			"Pull them by hand when ripe (hold left click); they go into your arms. Sell them at the Produce Bought cart, or eat them. Turnips: spring to autumn, ~3 days, survive frost. Cabbage: spring or summer, ~5 days; pick caterpillars off the leaves."],
 		["Grain: barley and wheat",
-			"1. Reap: hold the sickle over the ripe plot and sweep the mouse across it in steady strokes.\n2. Bind: switch to your hands (1) and click each cut bundle to tie it into a sheaf; sheaves go into your arms (3 at a time). Stack them on the grass (E) or load the handcart.\n3. Thresh: carry sheaves to the threshing floor (north-west of the house) and press E to lay them out, then hold the flail and click as the ring closes. The grain stays on the floor with its chaff.\n4. Winnow: hold the winnowing basket at the floor; hold the button to lift, release to toss when the pennant shows a gust. Clean grain goes into sacks beside the floor.\n5. Pick up the sacks (E), load them into the handcart, and sell them at the Produce Bought cart.\nBarley: spring only, ~5 days, killed by frost. Wheat: sow in autumn; it grows slowly over winter and ripens in spring."],
+			"1. Reap: hold the sickle over the ripe plot and sweep the mouse across it in steady strokes.\n2. Bind: switch to your hands (1) and click each cut bundle to tie it into a sheaf; sheaves go into your arms (3 at a time). Stack them on the grass (E) or load the handcart.\n3. Thresh: carry sheaves to the threshing floor (north-west of the house) and press E to lay them out, then hold the flail and click as the ring closes. The grain stays on the floor with its chaff.\n4. Winnow: hold the winnowing basket at the floor; hold the button to lift, release to toss when the pennant shows a gust. Each clean measure is bagged and set beside the floor.\n5. Pick up the sacks (E), load them into the handcart, and sell them at the Produce Bought cart.\nBarley: spring only, ~5 days, killed by frost. Wheat: sow in autumn; it grows slowly over winter and ripens in spring."],
+		["Saving seed",
+			"You needn't buy seed forever. Turnips and cabbages: leave a ripe one in the ground and after a few days it bolts, sending up a flowering stalk. Pull it then to shake out 2 handfuls of seed (you lose the vegetable). Barley and wheat: the grain is the seed. While carrying a sack of clean grain, open your pack (Tab) and keep it as seed: 6 handfuls."],
 		["Keeping crops healthy",
 			"Water: keep the soil in the marked band; rain does it for you. Weeds: pull them, easing off before the strain hits red. Blight (brown, spotted plants): pull the sick plant with your hands before it spreads to its neighbours; that's all it takes. Crows: they eat fresh seed; walk up to scare them, or set up a scarecrow. Better care means better quality, and better quality sells for more."],
 		["Looking after yourself",

@@ -176,6 +176,20 @@ func _carry_updated() -> void:
 	carry_changed.emit()
 
 
+## Keeps one unit of carried grain back as seed (a sack of clean barley → 6 handfuls of seed).
+func keep_as_seed() -> bool:
+	var it := Items.item(carry_id) if is_carrying() else null
+	if it == null or it.sow_as == &"":
+		return false
+	carry_units.pop_front()   # the plainest sack
+	if carry_units.is_empty():
+		carry_id = &""
+	inventory.add(it.sow_as, it.sow_quantity)
+	_carry_updated()
+	say("You keep a sack back as seed: %d handfuls of %s." % [it.sow_quantity, Items.name_of(it.sow_as).to_lower()])
+	return true
+
+
 ## Produce held in the pack.
 func pocket_count() -> int:
 	var n := 0

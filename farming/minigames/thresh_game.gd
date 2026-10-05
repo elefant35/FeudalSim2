@@ -1,67 +1,83 @@
 class_name ThreshGame
 extends Minigame
-## Threshing: beat the sheaves with the flail in rhythm. A ring closes on the target; click
-## as it meets it. Each sheaf takes a few good blows.
+## Threshing: swing the flail yourself. Move the mouse up to raise it overhead, then sweep it
+## down hard: the swingle (the loose beater) whips over and cracks onto the sheaf. The faster
+## the downswing, the harder the blow; a lazy swing barely loosens any grain.
 
-const BEAT := 0.9           ## Seconds per beat.
-const BLOWS_PER_SHEAF := 4.0
+const RAISED := 0.6          ## How high (0..1) the flail must go before a blow counts.
+const STRIKE := 0.1          ## Below this height on the way down, the swingle hits the sheaf.
+const SENSITIVITY := 0.0035  ## Height per pixel of mouse movement.
+const BLOWS_PER_SHEAF := 3.0 ## Hard blows to thresh one sheaf.
 
 var floor_: ThreshingFloor
-var _t := 0.0
-var _swung_this_beat := false
+var height := 0.35           ## 0 = beater on the floor, 0.35 = resting, 1 = overhead.
+var _prev_height := 0.35
+var _peak := 0.35            ## Highest point since the last blow.
+var _down_speed := 0.0       ## Fastest downswing (height/second) since the last blow.
+var _swing := 2.4            ## Swingle angle on its leather link (radians); animates the whip.
+var _swing_vel := 0.0
 var _last := ""
-var _streak := 0
+var _last_strength := 0.0
 
 
 func _init(f: ThreshingFloor) -> void:
 	floor_ = f
-	hint = "Click as the ring closes on the circle. Keep the rhythm."
+	hint = "Move the mouse UP to raise the flail, then swing it DOWN hard onto the sheaf."
 
 
-func _phase() -> float:
-	return fmod(_t, BEAT) / BEAT
+func mouse_motion(rel: Vector2) -> void:
+	height = clampf(height - rel.y * SENSITIVITY, 0.0, 1.0)
 
 
 func update(delta: float) -> void:
-	var prev := _phase()
-	_t += delta
-	if _phase() < prev:
-		if not _swung_this_beat:
-			_streak = 0
-		_swung_this_beat = false
-	if not _swung_this_beat:
-		player.viewmodel.pose_raise(_phase() * 0.9)
-
-
-func press() -> void:
-	if _swung_this_beat:
+	if delta <= 0.0:
 		return
-	_swung_this_beat = true
-	var off := absf(_phase() - 1.0) if _phase() > 0.5 else _phase()   # distance to the beat
-	var value := 0.0
-	if off < 0.09:
-		value = 1.0
-		_streak += 1
-		_last = "Clean blow" + (" ×%d" % _streak if _streak > 1 else "")
-	elif off < 0.2:
-		value = 0.5
-		_streak = 0
-		_last = "Off the beat"
+	var v := (height - _prev_height) / delta     # positive going up
+	_peak = maxf(_peak, height)
+	if v < 0.0:
+		_down_speed = maxf(_down_speed, -v)
+	# The swingle lags behind the handle and whips over on a fast downswing.
+	var rest := lerpf(2.4, 2.9, height)
+	_swing_vel += (-60.0 * (_swing - rest) - 6.0 * _swing_vel + v * 9.0) * delta
+	_swing = clampf(_swing + _swing_vel * delta, 0.2, 3.1)
+	if _prev_height >= STRIKE and height < STRIKE and v < 0.0:
+		_blow()
+	_prev_height = height
+	player.viewmodel.pose_flail(height, _swing)
+
+
+func _blow() -> void:
+	if _peak < RAISED:
+		_last = "Raise it higher first"
+		_last_strength = 0.0
+		_reset_swing()
+		return
+	var strength := clampf((_down_speed - 1.2) / 3.5, 0.0, 1.0)
+	_last_strength = strength
+	if strength >= 0.75:
+		_last = "Crack! A hard blow"
+	elif strength >= 0.35:
+		_last = "A fair blow"
 	else:
-		_streak = 0
-		_last = "Missed the rhythm"
-	player.viewmodel.play_strike()
-	player.needs.exert(0.7)
+		_last = "Too gentle: swing down harder"
+		strength = maxf(strength, 0.1)
+	player.needs.exert(0.4 + strength * 0.5)
 	var pos := floor_.sheaf_position()
-	Sfx.play_at("thresh", pos, -2.0 if value > 0.0 else -10.0)
-	if value > 0.0:
-		Fx.burst(player, pos + Vector3(0, 0.15, 0), Color(0.85, 0.72, 0.42), int(10 * value) + 4, 2.0, Vector3.UP, 60.0, 0.02)
-	var done := floor_.beat(value / BLOWS_PER_SHEAF, player)
+	Sfx.play_at("thresh", pos, -12.0 + strength * 12.0)
+	Fx.burst(player, pos + Vector3(0, 0.15, 0), Color(0.85, 0.72, 0.42), int(6 + strength * 18), 1.0 + strength * 2.0, Vector3.UP, 60.0, 0.02)
+	_swing_vel = 25.0   # the beater bounces off the sheaf
+	var done := floor_.beat(strength / BLOWS_PER_SHEAF, player)
 	if done != "":
 		player.say(done)
+	_reset_swing()
 	if not floor_.has_sheaves():
-		player.say("All the grain is threshed. Winnow it to clean out the chaff.")
+		player.say("All threshed. Now winnow the grain on the floor with your basket.")
 		stop()
+
+
+func _reset_swing() -> void:
+	_peak = height
+	_down_speed = 0.0
 
 
 func _on_stop() -> void:
@@ -69,9 +85,18 @@ func _on_stop() -> void:
 
 
 func draw(c: Control, center: Vector2) -> void:
-	var target := 26.0
-	var ring := lerpf(90.0, target, _phase())
-	c.draw_arc(center, target, 0, TAU, 32, Color(0.45, 0.75, 0.3), 4.0)
-	c.draw_arc(center, ring, 0, TAU, 40, Color(1, 0.95, 0.8, 0.85), 3.0)
-	c.draw_string(ThemeDB.fallback_font, center + Vector2(-160, 125), "%s   ·   sheaf %d%%" % [_last, roundi(floor_.current_progress() * 100.0)],
-		HORIZONTAL_ALIGNMENT_CENTER, 320, 18, Color(1, 0.96, 0.85))
+	# A height gauge to the left: raise into the marked band, then bring it down.
+	var r := Rect2(center + Vector2(-230, -90), Vector2(16, 180))
+	c.draw_rect(r.grow(3), Color(0.12, 0.09, 0.06, 0.85))
+	c.draw_rect(r, Color(0.32, 0.25, 0.17))
+	var band_top := r.position.y
+	var band_h := r.size.y * (1.0 - RAISED)
+	c.draw_rect(Rect2(r.position.x, band_top, r.size.x, band_h), Color(0.45, 0.75, 0.3, 0.6))
+	var y := r.end.y - r.size.y * height
+	c.draw_rect(Rect2(r.position.x - 5, y - 2, r.size.x + 10, 4), Color(1, 0.95, 0.8))
+	var font := ThemeDB.fallback_font
+	c.draw_string(font, r.position + Vector2(-46, 14), "raise", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(1, 0.96, 0.85))
+	c.draw_string(font, Vector2(r.position.x - 46, r.end.y), "swing", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(1, 0.96, 0.85))
+	# Last blow and how far the sheaf has come.
+	Minigame.draw_meter(c, center, floor_.current_progress(), 0.0, 0.0,
+		"%s   ·   sheaf %d%%   ·   %d left" % [_last if _last != "" else "Raise the flail", roundi(floor_.current_progress() * 100.0), floor_.sheaves.size()])

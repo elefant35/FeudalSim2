@@ -25,3 +25,6 @@ enum Kind { TOOL, SEED, PRODUCE, FOOD, GRAIN, PLACEABLE }
 ## Bulky goods (produce, sheaves, grain) are carried in your arms, up to this many at once, and
 ## set down in piles or a cart. 0 = a small thing that goes in the pack.
 @export var carry_max: int = 0
+## Grain that can be kept back as seed: one unit becomes `sow_quantity` of this seed item.
+@export var sow_as: StringName
+@export var sow_quantity: int = 0

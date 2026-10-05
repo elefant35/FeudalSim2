@@ -9,6 +9,7 @@ var floor_: ThreshingFloor
 var item: StringName = &""  ## The unwinnowed grain in the basket, e.g. barley_chaff.
 var quality: int = 0
 var _loaded := false       ## One measure is in the basket (taken from the floor's heap).
+var _bagged := 0           ## Sacks filled this session.
 var _clean := 0.0
 var _lift := 0.0
 var _holding := false
@@ -67,12 +68,14 @@ func release() -> void:
 	Fx.burst(player, hand, Color(0.8, 0.7, 0.45), int(30 * gain) + 6, 1.5 + wind * 3.0, floor_.wind_dir() + Vector3.UP * 0.6, 25.0, 0.02, 1.5, 1.6)
 	if _clean >= 1.0:
 		var clean_item := StringName(String(item).trim_suffix("_chaff"))
-		floor_.add_clean(clean_item, quality)
+		var pile := floor_.add_clean(clean_item, quality)
+		_bagged += 1
 		Sfx.play("grain", -4.0)
-		player.say("A measure of clean %s, into a sack." % clean_item)
+		Sfx.play_at("thump", pile.global_position, -8.0)
+		player.say("Clean %s bagged and set beside the floor (%d there now)." % [clean_item, pile.units.size()])
 		_loaded = false
 		if not _load_next():
-			player.say("All winnowed. Pick up the sacks (E) and take them to the cart or the buyer.")
+			player.say("All winnowed. The sacks stand beside the floor: pick them up (E) and take them to the cart or buyer.")
 			stop()
 
 
@@ -96,4 +99,4 @@ func _on_stop() -> void:
 
 func draw(c: Control, center: Vector2) -> void:
 	Minigame.draw_meter(c, center, floor_.wind, GUST, 1.0, "Wind   ·   %s" % _last, Color(0.55, 0.75, 0.9))
-	Minigame.draw_fill(c, center, _clean, "Clean", Color(0.85, 0.72, 0.4))
+	Minigame.draw_fill(c, center, _clean, "Clean: %d bagged" % _bagged, Color(0.85, 0.72, 0.4))

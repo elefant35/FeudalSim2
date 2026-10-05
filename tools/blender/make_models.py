@@ -29,7 +29,7 @@ C = {
     "wheat_ripe": (0.9, 0.74, 0.36), "barley_ripe": (0.88, 0.8, 0.52),
     "blight": (0.36, 0.26, 0.14), "dead": (0.5, 0.42, 0.3), "crow": (0.07, 0.07, 0.09),
     "beak": (0.2, 0.18, 0.16), "caterpillar": (0.45, 0.7, 0.22), "thistle": (0.55, 0.35, 0.6),
-    "hearth": (0.25, 0.22, 0.2), "ember": (0.95, 0.45, 0.15), "pot": (0.55, 0.36, 0.25),
+    "flower_yellow": (0.95, 0.85, 0.25), "hearth": (0.25, 0.22, 0.2), "ember": (0.95, 0.45, 0.15), "pot": (0.55, 0.36, 0.25),
 }
 
 
@@ -387,6 +387,21 @@ def _grain(stage, v, kind):
     return parts
 
 
+def _bolted(crop):
+    """A biennial gone to seed: its leaves, plus a tall flowering stalk."""
+    random.seed(40 + len(crop))
+    parts = (_turnip if crop == "turnip" else _cabbage)(2, "")
+    height = 0.75 if crop == "turnip" else 0.9
+    for k in range(3):
+        top = Vector((random.uniform(-0.08, 0.08), random.uniform(-0.08, 0.08), height * random.uniform(0.8, 1.0)))
+        parts.append(segment(f"stalk{k}", (0, 0, 0.08), top, 0.009, "stalk_green", 5))
+        for j in range(6):
+            p = top + Vector((random.uniform(-0.07, 0.07), random.uniform(-0.07, 0.07), random.uniform(-0.12, 0.04)))
+            parts.append(ball(f"flower{k}{j}", 0.018, p, "flower_yellow", subdiv=1))
+            parts.append(segment(f"pod{k}{j}", p, p + Vector((random.uniform(-0.03, 0.03), random.uniform(-0.03, 0.03), 0.05)), 0.004, "straw", 3))
+    return parts
+
+
 CROPS = {"turnip": _turnip, "cabbage": _cabbage,
          "barley": lambda s, v: _grain(s, v, "barley"), "wheat": lambda s, v: _grain(s, v, "wheat")}
 
@@ -406,6 +421,12 @@ def _crop_models():
 
 
 _crop_models()
+
+for _c in ("turnip", "cabbage"):
+    def _build_bolt(c=_c):
+        join(_bolted(c), c)
+        export(f"{c}_bolt")
+    MODELS[f"{_c}_bolt"] = _build_bolt
 
 
 @model

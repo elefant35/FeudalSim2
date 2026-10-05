@@ -309,6 +309,17 @@ func pose_raise(amount: float) -> void:
 	_swing_angle = lerpf(2.4, 2.9, amount)
 
 
+## Swinging the flail by hand: height 0 = beater down on the sheaf, 0.35 = resting, 1 = overhead.
+## `swingle` is the beater's angle on its leather link (it lags and whips over).
+func pose_flail(height: float, swingle: float) -> void:
+	_stop_tweens()
+	if height < 0.35:
+		_xf = _pose_named("struck").interpolate_with(_pose_named("rest"), height / 0.35)
+	else:
+		_xf = _pose_named("rest").interpolate_with(_pose_named("raised"), (height - 0.35) / 0.65)
+	_swing_angle = swingle
+
+
 ## Tugging a weed or plant with both hands: reach down, strain back.
 func pose_pull(reach: float, strain: float) -> void:
 	_stop_tweens()

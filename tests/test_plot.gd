@@ -218,3 +218,36 @@ func test_wheat_overwinters_into_summer() -> void:
 		p.daily_update(Clock.season_of(day), false, r)
 	check(p.has_crop(), "wheat survives winter")
 	eq(Clock.season_of(day), Clock.Season.SPRING, "autumn-sown wheat ripens in spring (day %d)" % day)
+
+
+func test_biennials_bolt_and_give_seed() -> void:
+	var p := _tilled()
+	_sow_evenly(p, turnip)
+	var r := rng(4)
+	p.daily_update(0, false, r)
+	p.growth = turnip.grow_days
+	check(p.is_ripe() and not p.is_bolted(), "ripe, not yet gone to seed")
+	for d in turnip.bolt_days:
+		p.water(1.0)
+		p.weeds.clear()
+		p.daily_update(0, false, r)
+	check(p.is_bolted(), "left in the ground, it bolts")
+	var health := p.health
+	eq(p.harvest_cell(0), -1, "a bolted turnip gives no turnip")
+	var seeds := 0
+	for i in PlotState.CELLS:
+		seeds += p.gather_seed(i)
+	check(seeds >= 2 * 7, "bolted plants give seed (%d handfuls)" % seeds)
+	eq(p.has_crop(), false, "plot cleared once all are pulled")
+	check(p.health >= health - 0.001, "bolting doesn't rot the crop")
+
+
+func test_grain_never_bolts() -> void:
+	var p := _tilled()
+	_sow_evenly(p, barley)
+	p.daily_update(0, false, rng())
+	p.growth = barley.grow_days
+	for d in 6:
+		p.water(1.0)
+		p.daily_update(0, false, rng())
+	eq(p.is_bolted(), false, "grain doesn't bolt; it spoils if left")

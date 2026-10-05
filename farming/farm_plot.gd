@@ -166,6 +166,8 @@ func _plant_model_id(i: int) -> String:
 	var crop := String(state.crop.id)
 	match state.plants[i]:
 		PlotState.Plant.ALIVE:
+			if state.is_bolted():
+				return crop + "_bolt"
 			var stage := 3 if state.is_ripe() else mini(2, int(state.growth_fraction() * 3.0))
 			return "%s_s%d" % [crop, stage]
 		PlotState.Plant.BLIGHTED:
@@ -261,6 +263,10 @@ func status_text() -> String:
 		lines.append("Sown with %s · %d/9 well covered" % [state.crop.display_name.to_lower(), good])
 	else:
 		var growing := "ripe!" if state.is_ripe() else "%d%% grown" % roundi(state.growth_fraction() * 100.0)
+		if state.is_bolted():
+			growing = "gone to seed (pull for seed)"
+		elif state.is_ripe() and state.crop.bolt_days > 0:
+			growing = "ripe! (goes to seed in %d day%s if left)" % [state.crop.bolt_days - state.ripe_days, "" if state.crop.bolt_days - state.ripe_days == 1 else "s"]
 		lines.append("%s · %s · %s quality (health %d%%)" % [state.crop.display_name, growing,
 			Items.QUALITY_NAMES[state.quality()].to_lower(), roundi(state.health * 100.0)])
 		if not state.stress.is_empty():
@@ -313,6 +319,8 @@ func _action_text(player: Player) -> String:
 			PlotState.Plant.CUT:
 				return "[Click] Bind the cut stalks into a sheaf"
 			PlotState.Plant.ALIVE:
+				if state.is_bolted():
+					return "[Hold left] Pull it and gather its seed"
 				if state.is_ripe():
 					if state.crop.harvest == CropData.Harvest.HANDS:
 						return "[Hold left] Pull the %s" % state.crop.display_name.to_lower()
@@ -411,8 +419,16 @@ func _bind(player: Player, c: int) -> void:
 		player.say("All bound. Stack your sheaves, then take them to the threshing floor.")
 
 
-## Harvest a hand-pulled cell, into the player's arms.
+## Harvest a hand-pulled cell, into the player's arms (or, if it's gone to seed, seed into the pack).
 func harvest_by_hand(player: Player, c: int) -> void:
+	if state.is_bolted():
+		var seed_item := state.crop.seed_item
+		var n := state.gather_seed(c)
+		if n > 0:
+			player.inventory.add(seed_item, n)
+			player.say("You shake out %d handfuls of %s." % [n, Items.name_of(seed_item).to_lower()])
+			refresh()
+		return
 	var product := state.crop.product_item
 	if player.carry_space(product) <= 0:
 		player.say("Your arms are full. Set them down first (E).")

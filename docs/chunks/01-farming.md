@@ -171,6 +171,20 @@ field of plots, a threshing floor, a tool stall (buy seeds, tools, bread) and a 
   - When the cart snags, it holds you back with a jolt and a message. You never silently let go;
     E releases it.
 
+## Playtest 5 feedback (fixed)
+
+- **Threshing:** you swing the flail yourself.
+  - Mouse up raises it; a hard downswing brings the swingle cracking onto the sheaf.
+  - Blow strength follows how fast you swing; a lazy swing barely counts, and you must raise it high first.
+  - The swingle lags and whips over.
+- **Winnowing:** each clean measure is bagged and set beside the floor as an ordinary pile of sacks
+  (E picks them up). A message says where it went, and the HUD counts the sacks bagged.
+- **Seed saving, done the realistic way:**
+  - turnips and cabbages left in the ground after ripening bolt (flowering stalks) and give
+    2 handfuls of seed each when pulled
+  - grain is its own seed: keep a sack of clean grain as 6 handfuls of seed
+  - for future crops, seed could also come from eating (e.g. dried peas and beans, apple cores)
+
 ## Not verified yet (needs Tyler's hands)
 
 Every mini-game is exercised by tests and screenshots, but none of them has had a real mouse click.

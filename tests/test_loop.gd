@@ -148,11 +148,15 @@ func test_grain_chain_thresh_winnow_sell() -> void:
 	var g: ThreshGame = tf.use(player)
 	player.start_minigame(g)
 	var guard := 0
-	while not g.done and guard < 3000:
-		g.update(0.02)
-		if g._phase() > 0.97 or g._phase() < 0.03:
-			g.press()
+	while not g.done and guard < 200:
+		for k in 20:          # raise it slowly overhead
+			g.mouse_motion(Vector2(0, -12))
+			g.update(0.02)
+		for k in 6:           # and bring it down hard
+			g.mouse_motion(Vector2(0, 60))
+			g.update(0.02)
 		guard += 1
+	check(guard < 10, "hard blows thresh two sheaves in a handful of swings (%d)" % guard)
 	eq(tf.heap_count(), 2, "threshed grain lies on the floor")
 
 	player.select_slot(player.hotbar.find(&"winnowing_basket"))
@@ -167,9 +171,14 @@ func test_grain_chain_thresh_winnow_sell() -> void:
 		elif wg._lift >= 1.0 and tf.wind > 0.6:
 			wg.release()
 		guard += 1
-	eq(tf.sack_count(), 2, "two sacks of clean grain")
 	eq(tf.heap_count(), 0, "nothing left to winnow")
-	tf.interact(player)
+	var piles: Piles = w.get_node("Piles")
+	eq(piles.all_piles().size(), 1, "the sacks stand beside the floor as a pile")
+	var sacks: ProducePile = piles.all_piles()[0]
+	eq(sacks.id, &"barley")
+	eq(sacks.units.size(), 2, "two sacks of clean grain")
+	check(sacks.global_position.distance_to(tf.global_position) < 4.0, "right beside the floor")
+	sacks.interact(player)
 	eq(player.carry_id, &"barley", "picked up the sacks")
 	eq(player.carry_units, [2, 2] as Array[int], "good quality kept")
 	check(Items.sell_value(&"barley", 2) > Items.sell_value(&"barley", 0), "quality pays")
@@ -365,9 +374,9 @@ func test_next_step_walks_through_the_grain_chain() -> void:
 	tf.heap.add(&"barley_chaff", 1, 1)
 	check(step.call().contains("basket"), "threshed heap → winnow")
 	tf.heap.remove(&"barley_chaff", 1, 1)
-	tf.sacks.add(&"barley", 1, 1)
+	var bagged := tf.add_clean(&"barley", 1)
 	check(step.call().contains("sacks"), "sacks → pick up and load")
-	tf.sacks.remove(&"barley", 1, 1)
+	bagged.units.clear()
 	cart.goods.add(&"barley", 2, 1)
 	check(step.call().contains("handcart"), "loaded cart → pull it to the buyer")
 	check(FarmGuide.sections().size() >= 6, "guide has sections")
@@ -436,4 +445,17 @@ func test_barrels_fill_carry_cart_and_sell() -> void:
 	player.target = null
 	player.set_down()
 	eq(piles.all_barrels().size(), 1, "set down as a barrel")
+	_finish(w)
+
+
+func test_keep_grain_as_seed() -> void:
+	var w := _world()
+	var player: Player = w.player
+	for k in 3:
+		player.pick_up(&"barley", 1)
+	var before := player.inventory.count(&"barley_seed")
+	check(player.keep_as_seed(), "kept a sack as seed")
+	eq(player.inventory.count(&"barley_seed"), before + 6, "6 handfuls of barley seed")
+	eq(player.carry_count(), 2, "one sack fewer")
+	check("barley_seed" in Array(player.hotbar).map(func(x: StringName) -> String: return String(x)), "new seed lands on the hotbar")
 	_finish(w)

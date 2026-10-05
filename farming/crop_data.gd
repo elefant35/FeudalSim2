@@ -20,6 +20,12 @@ enum Harvest { HANDS, SICKLE }
 @export var gets_caterpillars: bool = false
 ## Daily chance a healthy plant catches blight (doubled in rain).
 @export var blight_chance: float = 0.02
+## Biennials (turnip, cabbage) left in the ground this many days after ripening bolt: they send
+## up a flowering stalk and go to seed. Pulling one then gives seed instead of produce.
+## 0 = doesn't bolt (grain is its own seed: keep a sack of clean grain as seed instead).
+@export var bolt_days: int = 0
+## Handfuls of seed gathered from each bolted plant.
+@export var bolt_seed: int = 0
 ## Visual: which procedural model family to draw.
 @export var look: StringName = &"turnip"
 

@@ -80,6 +80,11 @@ func is_ripe() -> bool:
 	return crop != null and germinated and growth >= crop.grow_days
 
 
+## A ripe biennial left long enough has bolted: it's gone to seed.
+func is_bolted() -> bool:
+	return is_ripe() and crop.bolt_days > 0 and ripe_days >= crop.bolt_days
+
+
 func growth_fraction() -> float:
 	if crop == null or not germinated:
 		return 0.0
@@ -200,12 +205,22 @@ func crow_peck(rng: RandomNumberGenerator) -> void:
 ## Harvest one cell. Root crops come out whole; grain is cut and must then be bound.
 ## Returns the quality of what was harvested, or -1 if nothing.
 func harvest_cell(i: int) -> int:
-	if not is_ripe() or plants[i] != Plant.ALIVE:
+	if not is_ripe() or is_bolted() or plants[i] != Plant.ALIVE:
 		return -1
 	var q := quality()
 	plants[i] = Plant.CUT if crop.harvest == CropData.Harvest.SICKLE else Plant.DONE
 	_check_finished()
 	return q
+
+
+## Pull a bolted plant for its seed. Returns handfuls gathered (0 if nothing to pull).
+func gather_seed(i: int) -> int:
+	if not is_bolted() or plants[i] != Plant.ALIVE:
+		return 0
+	plants[i] = Plant.DONE
+	var n := crop.bolt_seed
+	_check_finished()
+	return n
 
 
 ## Bind a cut cell of grain into a sheaf. Returns quality, or -1.
@@ -305,7 +320,10 @@ func _grow(season: int, raining: bool, rng: RandomNumberGenerator) -> void:
 
 	if growth >= crop.grow_days:
 		ripe_days += 1
-		if ripe_days > ROT_AFTER_DAYS:
+		if crop.bolt_days > 0:
+			if ripe_days == crop.bolt_days:
+				last_event = "The %ss you left in the ground have bolted and gone to seed. Pull them to gather seed." % crop.display_name.to_lower()
+		elif ripe_days > ROT_AFTER_DAYS:
 			health -= 0.1
 			stress.append("left too long")
 			last_event = "The %s is spoiling in the field." % crop.display_name.to_lower()

@@ -16,3 +16,5 @@ has_quality = true
 crop = &""
 hotbar = false
 carry_max = 4
+sow_as = &"wheat_seed"
+sow_quantity = 6

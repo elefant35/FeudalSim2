@@ -498,6 +498,15 @@ func open_inventory() -> void:
 		arms.add_child(t)
 		arms.add_child(_label("In your arms: %s" % player.carry_text(), FONT, INK, false))
 		var food := Items.item(player.carry_id).food_value > 0.0
+		if Items.item(player.carry_id).sow_as != &"":
+			var keep := Button.new()
+			keep.text = "Keep a sack as seed (+%d handfuls)" % Items.item(player.carry_id).sow_quantity
+			keep.focus_mode = Control.FOCUS_NONE
+			keep.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			keep.pressed.connect(func() -> void:
+				player.keep_as_seed()
+				_refresh_pack())
+			arms.add_child(keep)
 		if food:
 			for pair: Array in [["Eat one", func() -> void: player.eat_something(); _refresh_pack()],
 					["Pocket one (%d/%d)" % [player.pocket_count(), Player.POCKET_MAX], func() -> void:

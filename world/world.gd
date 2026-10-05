@@ -295,6 +295,16 @@ func dev_scenario(scenario: String) -> void:
 			var stack: Array[int] = [2, 2, 1]
 			($Piles as Piles).put(&"barley_sheaf", stack, FarmLayout.THRESHING_POS + Vector3(3.2, 0, -1.0))
 			player.set_bucket_water(1.0)
+			# A bed of turnips left to go to seed.
+			var seedbed := field.plots[8].state
+			while not seedbed.is_tilled():
+				seedbed.till(1.0)
+			for pt in [Vector2(0.33, 0.33), Vector2(0.67, 0.33), Vector2(0.33, 0.67), Vector2(0.67, 0.67)]:
+				seedbed.sow(Items.crop(&"turnip"), pt)
+			seedbed.daily_update(0, false, field.rng)
+			seedbed.growth = 99.0
+			seedbed.ripe_days = 3
+			field.plots[8].refresh()
 			var barrel := ($Piles as Piles).spawn_barrel(FarmLayout.CART_POS + Vector3(1.8, 0, 2.2))
 			barrel.goods.add(&"turnip", 5, 1)
 			for i in field.plots.size():
