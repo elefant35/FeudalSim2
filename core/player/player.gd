@@ -133,6 +133,7 @@ func pick_up(id: StringName, quality: int) -> bool:
 		return false
 	carry_id = id
 	carry_units.append(quality)
+	carry_units.sort()
 	_carry_updated()
 	return true
 
@@ -186,7 +187,8 @@ func pocket_one() -> bool:
 func set_down() -> void:
 	if not is_carrying():
 		return
-	var at := target_point if target != null else global_position - global_basis.z * 1.0
+	# Aimed at open ground: put it there. Anything else (a wall, the well, a fence): at your feet.
+	var at := target_point if target is Ground else global_position - global_basis.z * 0.9
 	at.y = Terrain.height_at(at.x, at.z)
 	var piles := get_tree().get_first_node_in_group("piles")
 	if piles == null:

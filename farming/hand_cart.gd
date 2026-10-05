@@ -25,9 +25,9 @@ func _ready() -> void:
 	_visual.add_child(_contents)
 	var shape := CollisionShape3D.new()
 	var b := BoxShape3D.new()
-	b.size = Vector3(1.7, 1.1, 2.2)
+	b.size = Vector3(1.7, 0.9, 2.2)
 	shape.shape = b
-	shape.position.y = 0.6
+	shape.position.y = 0.7   # clear of the ground, so only real obstacles stop it
 	add_child(shape)
 	goods.changed.connect(_refresh_contents)
 	_refresh_contents()
@@ -141,7 +141,16 @@ func _physics_process(delta: float) -> void:
 	dir = dir.normalized()
 	var to := hitch + dir * SHAFT
 	to.y = Terrain.height_at(to.x, to.z)
-	var moved := Vector2(to.x - from.x, to.z - from.z).length()
+	var motion := Vector3(to.x - from.x, 0, to.z - from.z)
+	var moved := motion.length()
+	var turned := Transform3D(Basis(Vector3.UP, atan2(dir.x, dir.z)), from)
+	if moved > 0.0005 and test_move(turned, motion):
+		# Snagged on a fence, a wall or a tree: the cart stays; pull too far and you lose your grip.
+		if from.distance_to(hitch) > SHAFT + 0.9:
+			Sfx.play_at("thump", global_position, -4.0)
+			_puller.say("The handcart caught on something and you lost your grip.")
+			release(_puller)
+		return
 	global_position = to
 	global_rotation = Vector3(0, atan2(dir.x, dir.z), 0)
 	if moved > 0.02 and randf() < delta * 4.0:

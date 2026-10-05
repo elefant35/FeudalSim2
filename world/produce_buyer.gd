@@ -3,7 +3,7 @@ extends StaticBody3D
 ## The miller's cart: buys produce and clean grain from your arms, your pack, or a handcart
 ## parked beside it. Better quality fetches more.
 
-const CART_RANGE := 7.0
+const CART_RANGE := 9.0
 
 
 func get_prompt(player: Player) -> String:

@@ -13,7 +13,11 @@ extends Node
 ## --click         left-click whatever is under the crosshair (starts its minigame)
 ## --interact      press E on whatever is under the crosshair
 ## --carry=id:n    start with n of id in your arms
+## --cartpos=x,z,yaw  move the handcart first (yaw in degrees)
 ## --pull          take the handcart's handles
+## --release       let go of the handcart after walking
+## --posend=x,y,z  move the player just before the screenshot
+## --lookend=yaw,pitch  where to look just before the screenshot
 ## --walk=seconds  walk straight ahead (prints where you end up)
 ## --open=panel    open a panel: guide, pack, pause
 ## --eat           eat something just before the screenshot
@@ -59,6 +63,11 @@ func apply(world: Node3D, player: Player) -> void:
 		var cp := String(args.carry).split(":")
 		for k in int(cp[1]) if cp.size() > 1 else 1:
 			player.pick_up(StringName(cp[0]), 2)
+	if args.has("cartpos"):
+		var cv := String(args.cartpos).split_floats(",")
+		var c: HandCart = world.get_node("HandCart")
+		c.global_position = Vector3(cv[0], Terrain.height_at(cv[0], cv[1]), cv[1])
+		c.global_rotation = Vector3(0, deg_to_rad(cv[2]), 0)
 	if args.has("pull"):
 		var cart: HandCart = world.get_node("HandCart")
 		player.global_position = cart.handle_point()
@@ -66,6 +75,16 @@ func apply(world: Node3D, player: Player) -> void:
 		cart.grab(player)
 	if args.has("walk"):
 		player.dev_walk_seconds = float(args.walk)
+		await get_tree().create_timer(float(args.walk) + 0.2).timeout
+	if args.has("release") and player.pulling:
+		player.pulling.call("release", player)
+	if args.has("posend"):
+		var pe := String(args.posend).split_floats(",")
+		player.global_position = Vector3(pe[0], pe[1], pe[2])
+	if args.has("lookend"):
+		var le := String(args.lookend).split_floats(",")
+		player.rotation.y = deg_to_rad(le[0])
+		player.head.rotation.x = deg_to_rad(le[1] if le.size() > 1 else 0.0)
 	if args.has("hold"):
 		player.select_slot(int(args.hold))
 	if args.has("newgame") and not _reloaded:

@@ -141,7 +141,7 @@ func get_prompt(player: Player) -> String:
 		if SHEAF_TO_CHAFF.has(player.carry_id):
 			lines.append("[E] Lay out your sheaves" if sheaves.size() < CAPACITY else "The floor is full. Thresh what's here first.")
 		else:
-			lines.append("You're carrying %s. Set it down elsewhere." % player.carry_text())
+			lines.append("[E] Set your %s down here beside the floor" % player.carry_text())
 	elif held == &"flail":
 		lines.append("[Click] Thresh in rhythm" if has_sheaves() else "Bring sheaves here to thresh them.")
 	elif held == &"winnowing_basket":
@@ -158,7 +158,7 @@ func get_prompt(player: Player) -> String:
 func interact(player: Player) -> void:
 	if player.is_carrying():
 		if not SHEAF_TO_CHAFF.has(player.carry_id):
-			player.say("Only sheaves go on the threshing floor.")
+			player.set_down()   # beside the floor, at your feet
 			return
 		var id := player.carry_id
 		var units := player.take_carry()

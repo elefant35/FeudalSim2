@@ -181,6 +181,9 @@ static func _fence(world: Node3D, field: Field) -> void:
 			var mid := a + dir * seg * (i + 0.5)
 			var f := place(fence, &"fence_simple", mid.x, mid.z, yaw)
 			f.scale = Vector3(seg / 3.0, 1, 1)
+			# The model's geometry isn't centred on its origin: shift it onto the fence line.
+			var off := mid - mesh_aabb(f).get_center()
+			f.position += Vector3(off.x, 0, off.z)
 			collide_with(fence, f)
 	# Gate posts.
 	for z in [c.z - 1.2, c.z + 1.2]:
