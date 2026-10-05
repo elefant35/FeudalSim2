@@ -283,7 +283,9 @@ func _grow(season: int, raining: bool, rng: RandomNumberGenerator) -> void:
 		stress.append("waterlogged")
 	health -= 0.035 * weeds.size()
 	if not weeds.is_empty():
-		stress.append("weeds")
+		# Weeds steal water and light: each one slows growth by a tenth (to half at worst).
+		rate *= maxf(0.5, 1.0 - 0.1 * weeds.size())
+		stress.append("weeds (growth slowed)")
 
 	if crop.gets_caterpillars and growth >= 1.0:
 		for i in CELLS:

@@ -51,7 +51,8 @@ turnip seed, a small store of food (five loaves, four turnips) and 12 gold. Ever
 **What hurts crops.** Look at a plot to see its health and what hurt it overnight. Quality is mostly
 health (60%), plus how evenly you sowed (25%) and how well you tilled (15%); better quality sells for more.
 - *Dry soil:* growth drops to 40% that day and health falls 12%.
-- *Weeds:* each weed costs 3.5% health a day, up to 5 weeds per plot. A snapped root regrows the next day.
+- *Weeds:* each weed slows growth by a tenth (down to half speed) and costs 3.5% health a day, up to 5 weeds
+  per plot. A snapped root regrows the next day.
 - *Crows:* they eat sown seed before it sprouts. Fewer seeds sprout, so you get fewer plants and less even
   cover.
 - *Caterpillars (cabbage):* each one costs 2.5% health a day; three on one cabbage kill it.

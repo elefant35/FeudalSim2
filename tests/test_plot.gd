@@ -72,6 +72,23 @@ func test_watered_crop_ripens_on_time() -> void:
 	check(p.quality() >= 2, "well-kept crop should be good or fine, got %d" % p.quality())
 
 
+func test_weeds_slow_growth() -> void:
+	var clean := _tilled()
+	var weedy := _tilled()
+	for p: PlotState in [clean, weedy]:
+		_sow_evenly(p, turnip)
+		p.daily_update(0, false, rng())
+	for k in 4:
+		weedy.weeds.append(Vector2(0.1 + k * 0.2, 0.5))
+	for p: PlotState in [clean, weedy]:
+		p.water(1.0)
+		p.weeds_regrowing = 0
+	clean.daily_update(0, false, rng())
+	weedy.daily_update(0, false, rng())
+	check(weedy.growth < clean.growth * 0.7, "4 weeds slow growth (%.2f vs %.2f)" % [weedy.growth, clean.growth])
+	check(weedy.stress.has("weeds (growth slowed)"))
+
+
 func test_neglect_costs_quality() -> void:
 	var p := _tilled()
 	_sow_evenly(p, turnip)
