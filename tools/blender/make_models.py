@@ -200,14 +200,52 @@ def fp_arm_l():
 
 # --- Tools ------------------------------------------------------------------------------------
 
+def plate(name, top, down, length, w_top, w_bot, t_top, t_bot, material, start=0.0, end=1.0):
+    """A tapered flat plate (a blade): its top edge centred on `top`, running `length` along `down`,
+    widening from w_top to w_bot across X and thinning from t_top to t_bot. start/end (0..1) cut a band."""
+    top, down = Vector(top), Vector(down).normalized()
+    side = Vector((1, 0, 0))
+    face = down.cross(side).normalized()
+    me = bpy.data.meshes.new(name)
+    bm = bmesh.new()
+    rows = []
+    for f in (start, end):
+        c = top + down * length * f
+        w = (w_top + (w_bot - w_top) * f) / 2
+        t = (t_top + (t_bot - t_top) * f) / 2
+        rows.append([bm.verts.new(c + side * sx * w + face * sz * t) for sx, sz in ((-1, -1), (1, -1), (1, 1), (-1, 1))])
+    a, b = rows
+    bm.faces.new(list(reversed(a)))
+    bm.faces.new(b)
+    for i in range(4):
+        j = (i + 1) % 4
+        bm.faces.new([a[i], a[j], b[j], b[i]])
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    bm.to_mesh(me)
+    o = bpy.data.objects.new(name, me)
+    bpy.context.collection.objects.link(o)
+    o.data.materials.append(mat(material))
+    return o
+
+
 @model
 def hoe():
+    # A draw hoe: an iron eye sleeved over the top of the shaft, a short goose-neck curving
+    # forward, and a blade that flares towards its edge, angled back towards the user.
+    neck = [(0, 0.022, 1.012), (0, 0.055, 1.03), (0, 0.09, 1.022), (0, 0.112, 0.992)]
+    down = (0, -math.sin(math.radians(35)), -math.cos(math.radians(35)))
+    blade_top = (0, 0.116, 0.99)
     parts = [
-        segment("handle", (0, 0, -0.35), (0, 0, 1.05), 0.018, "wood", 6),
-        box("socket", (0.04, 0.05, 0.06), (0, 0.02, 1.05), "iron"),
-        box("blade", (0.16, 0.012, 0.13), (0, 0.06, 0.98), "iron", rot=(-15, 0, 0)),
-        box("edge", (0.16, 0.014, 0.02), (0, 0.075, 0.915), "iron_edge", rot=(-15, 0, 0)),
+        segment("handle", (0, 0, -0.35), (0, 0, 1.02), 0.018, "wood", 8),
+        cyl("eye", 0.027, 0.075, (0, 0, 1.0), "iron", verts=8),
+        cyl("eye_cap", 0.027, 0.012, (0, 0, 1.043), "iron", verts=8, r2=0.018),
+        plate("blade", blade_top, down, 0.135, 0.09, 0.17, 0.012, 0.005, "iron", 0.0, 0.84),
+        plate("edge", blade_top, down, 0.135, 0.09, 0.17, 0.012, 0.002, "iron_edge", 0.84, 1.0),
     ]
+    for i in range(len(neck) - 1):
+        parts.append(segment(f"neck{i}", neck[i], neck[i + 1], 0.011 - i * 0.001, "iron", 6))
+        if i > 0:
+            parts.append(ball(f"knuckle{i}", 0.011 - i * 0.001, neck[i], "iron"))
     join(parts, "hoe")
     export("hoe")
 
