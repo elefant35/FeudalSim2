@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"barley"
 display_name = "Barley"
-description = "A measure of clean barley. Sell it at the Produce Bought cart."
+description = "A sack of clean barley. Grind it into meal in your windmill, or sell it to Osric the miller. Keep a sack back as seed if you like."
 kind = 4
 buy_price = 0
 buy_quantity = 1

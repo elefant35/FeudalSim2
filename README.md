@@ -135,6 +135,6 @@ tools/sandbox.sh
 ```
 
 You start with 200 gold, every tool and seed of each crop. Turnips and cabbages are already loaded in the
-handcart, a barrel of turnips stands beside it, and a stack of barley sheaves lies by the threshing floor. Four plots are
+handcart, a barrel of turnips stands beside it, a stack of barley sheaves lies by the threshing floor, and six sacks of clean wheat wait beside your windmill. Four plots are
 ripe (one of each crop), four are half-grown with weeds, caterpillars and blight to deal with, and four
 are left for you to till. The sandbox never reads or writes your real save.

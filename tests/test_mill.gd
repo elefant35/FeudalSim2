@@ -283,3 +283,10 @@ func test_sails_pick_up_speed_frame_by_frame() -> void:
 		mill.simulate(0.026)
 	check(mill.speed > 0.2, "the sails get going in small steps too (%.2f)" % mill.speed)
 	_finish(w)
+
+
+func test_flour_shows_as_sacks_everywhere() -> void:
+	eq(Items.carry_model(&"wheat_flour"), &"flour_sack")
+	eq(Items.carry_model(&"wheat"), &"grain_sack")
+	eq(Items.carry_model(&"turnip"), &"turnip")
+	check(Models.exists(&"flour_sack"), "the flour sack model exists")

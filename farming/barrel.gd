@@ -2,7 +2,7 @@ class_name Barrel
 extends StaticBody3D
 ## A barrel for storing and moving produce and grain. E while carrying fills it; E with empty
 ## hands opens it (take an armful out, or lift the whole barrel to carry it). Set it down
-## anywhere, load it into the handcart, or stand it beside the buyer to sell from it.
+## anywhere, load it into the handcart, or stand it beside the buyer to sell from it (produce, flour).
 
 const CAPACITY := 24
 
@@ -130,7 +130,7 @@ func _refresh() -> void:
 		return
 	var id: StringName = stacks[0].id
 	var it := Items.item(id)
-	var show_id: StringName = &"grain_pile" if it.kind == ItemData.Kind.GRAIN and not String(id).ends_with("_sheaf") else id
+	var show_id: StringName = &"grain_pile" if it.kind == ItemData.Kind.GRAIN and not String(id).ends_with("_sheaf") else Items.carry_model(id)
 	var n := clampi(count() / 3, 1, 6)
 	for i in n:
 		var m := Models.make(show_id)

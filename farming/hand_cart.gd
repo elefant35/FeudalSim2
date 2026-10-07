@@ -2,7 +2,7 @@ class_name HandCart
 extends AnimatableBody3D
 ## A two-wheeled handcart. Load produce, sheaves and grain into it (E while carrying), take an
 ## armful back out (E), or grab the handles (E at the front) and pull it behind you. The produce
-## buyer buys straight from a cart parked beside them.
+## buyer buys produce and flour straight from a cart parked beside them; a miller buys its grain.
 
 const CAPACITY := 40
 const SHAFT := 2.6        ## Distance from the cart's centre to where you hold the shafts.

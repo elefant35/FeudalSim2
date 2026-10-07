@@ -134,7 +134,7 @@ func get_prompt(player: Player) -> String:
 		else:
 			lines.append("[E] Set your %s down here beside the floor" % player.carry_text())
 	elif held == &"flail":
-		lines.append("[Click] Thresh in rhythm" if has_sheaves() else "Bring sheaves here to thresh them.")
+		lines.append("[Click] Thresh: raise the flail (mouse up), swing it down hard" if has_sheaves() else "Bring sheaves here to thresh them.")
 	elif held == &"winnowing_basket":
 		lines.append("[Hold left, release to toss] Winnow" if heap_count() > 0 else "Thresh some sheaves first.")
 	elif has_sheaves():

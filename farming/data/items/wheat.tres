@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"wheat"
 display_name = "Wheat"
-description = "A measure of clean wheat. Sell it at the Produce Bought cart."
+description = "A sack of clean wheat. Grind it into flour in your windmill, or sell it to Osric the miller. Keep a sack back as seed if you like."
 kind = 4
 buy_price = 0
 buy_quantity = 1

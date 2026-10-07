@@ -95,7 +95,7 @@ static func next_step(player: Player, field: Field, floor_: ThreshingFloor, pile
 		else:
 			produce_piles += 1
 	if grain_piles > 0:
-		return "Pick up the sacks of clean grain beside the threshing floor (E) and take them to a mill (yours, or Osric's)."
+		return "Pick up the sacks of clean grain (E) and take them to a mill: yours, or Osric's."
 	if sheaf_piles > 0:
 		return "Carry the sheaves from your stack to the threshing floor (E to pick up, E at the floor to lay them)."
 	if ripe_grain:

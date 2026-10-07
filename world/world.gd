@@ -366,6 +366,10 @@ func dev_scenario(scenario: String) -> void:
 			field.plots[8].refresh()
 			var barrel := ($Piles as Piles).spawn_barrel(FarmLayout.CART_POS + Vector3(1.8, 0, 2.2))
 			barrel.goods.add(&"turnip", 5, 1)
+			# Clean wheat beside your windmill, ready to grind.
+			var mill: PostMill = $Windmill
+			var wheat: Array[int] = [2, 2, 1, 1, 2, 1]
+			($Piles as Piles).put(&"wheat", wheat, mill.to_global(Vector3(-2.5, 0, 5.5)))
 			for i in field.plots.size():
 				var s := field.plots[i].state
 				if i >= 8:

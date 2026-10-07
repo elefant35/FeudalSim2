@@ -88,6 +88,14 @@ buyer, and you can sell him yours.
 - The feel of walking the tailpole round.
 - Osric's pace.
 
+## Known rough edges
+
+- A handcart can be pulled through a mill's body and steps (carts only collide with the static
+  world).
+- Nothing carries you with a turning body: stand inside Osric's mill while he walks it round, and the
+  walls will shove you.
+- From the floor the hopper's rim is near eye level, so read its prompt for how many sacks are in it.
+
 ## Left for later
 
 - Dressing the millstones as they wear (a mill-bill mini-game).
