@@ -4,7 +4,7 @@ extends RefCounted
 ## trees, the well...), limited to the farms. Runs on a thread at startup; villagers walk in
 ## straight lines until it's ready.
 
-const AREA := AABB(Vector3(-32, -3, -26), Vector3(76, 14, 52))
+const AREA := AABB(Vector3(-34, -3, -34), Vector3(78, 14, 60))
 const CELL := 0.15
 
 

@@ -17,6 +17,12 @@ const NB_FIELD := Vector3(22.0, 0.0, 3.0)
 const NB_FLOOR := Vector3(22.0, 0.0, -17.0)
 const NB_WELL := Vector3(17.5, 0.0, -9.0)
 const NB_CART := Vector3(30.5, 0.0, 7.0)   ## Clear of the beds, handy for the lane.
+# Windmills: your own north-west of the farm; the miller's (with his cottage) to the north.
+const PLAYER_MILL := Vector3(-22.0, 0.0, -20.0)
+const MILL := Vector3(8.0, 0.0, -24.0)
+const MILLER_HOUSE := Vector3(-4.0, 0.0, -26.0)
+const MILLER_CART := Vector3(3.0, 0.0, -18.5)
+const MILL_CLEAR := 7.5   ## Nothing in the way of a mill's sails and tailpole as it turns.
 const NB_LAYOUT: Array[Vector2] = [Vector2(-3, -1.5), Vector2(0, -1.5), Vector2(3, -1.5), Vector2(-3, 1.5), Vector2(0, 1.5), Vector2(3, 1.5)]
 
 static var bed_wake_position := Vector3(-11.0, 0.0, -3.0)
@@ -50,6 +56,7 @@ static func build(world: Node3D) -> void:
 	_stall(world)
 	_buyer(world)
 	_neighbour(world)
+	_mills(world)
 	_lane(world)
 	_props(world)
 	_scatter_nature(world)
@@ -65,6 +72,9 @@ static func no_dig_reason(pos: Vector3) -> String:
 		return "Too close to the traders."
 	if Vector2(pos.x - THRESHING_POS.x, pos.z - THRESHING_POS.z).length() < 4.4:
 		return "Too close to the threshing floor."
+	for m: Vector3 in [PLAYER_MILL, MILL]:
+		if Vector2(pos.x - m.x, pos.z - m.z).length() < MILL_CLEAR:
+			return "Too close to the windmill: its sails and tailpole sweep round here."
 	if Vector2(pos.x, pos.z).length() > 60.0:
 		return "That's too far from the farm."
 	return ""
@@ -211,6 +221,45 @@ static func _neighbour(world: Node3D) -> void:
 	wynn.role = role
 	world.add_child(wynn)
 	wynn.global_position = wynn.home
+	role.stock_up()
+
+
+## Two post mills: yours, and Osric the miller's with his cottage, cart and grain store.
+static func _mills(world: Node3D) -> void:
+	var mine := PostMill.new()
+	mine.name = "Windmill"
+	mine.position = PLAYER_MILL
+	world.add_child(mine)
+	_sign(world, "Your Windmill", PLAYER_MILL + Vector3(5.5, 0, 6.0), -0.5)
+	var mill := PostMill.new()
+	mill.name = "OsricMill"
+	mill.owner_key = &"osric"
+	mill.title = "Osric's windmill"
+	mill.position = MILL
+	world.add_child(mill)
+	_sign(world, "The Mill · Grain Bought", MILL + PostMill.STORE_AT + Vector3(0.2, 0, 1.6), 0.1)
+	var house := _cottage(world, "OsricHouse", MILLER_HOUSE, -PI / 2)   # door faces east, towards the mill
+	var cart := HandCart.new()
+	cart.name = "OsricCart"
+	cart.owner_key = &"osric"
+	world.add_child(cart)
+	cart.global_position = MILLER_CART
+	cart.global_rotation.y = PI   # handles towards the lane
+	var osric := Npc.new()
+	osric.name = "Osric"
+	osric.display_name = "Osric"
+	osric.owner_key = &"osric"
+	osric.bed = house.global_transform * Vector3(1.95, 0.0, 1.25)
+	osric.bed_head = house.global_basis * Vector3(0, 0, -1)
+	osric.home = house.global_transform * Vector3(0.0, 0.0, -3.6)
+	osric.tint = {"tunic": Color(0.78, 0.74, 0.64), "hair": Color(0.3, 0.24, 0.2)}
+	var role := MillerRole.new()
+	role.mill = mill
+	role.cart = cart
+	osric.role = role
+	world.add_child(osric)
+	osric.global_position = osric.home
+	mill.open_store(osric)
 	role.stock_up()
 
 
@@ -392,7 +441,7 @@ static func _scatter_nature(world: Node3D) -> void:
 	nature.name = "Nature"
 	world.add_child(nature)
 	var blocked := func(x: float, z: float, margin: float) -> bool:
-		return x > -24.0 - margin and x < 36.0 + margin and z > -24.0 - margin and z < 18.0 + margin
+		return x > -32.0 - margin and x < 36.0 + margin and z > -34.0 - margin and z < 18.0 + margin
 	var placed := 0
 	while placed < 170:
 		var x := rng.randf_range(-85, 85)

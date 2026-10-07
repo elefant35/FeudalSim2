@@ -115,7 +115,7 @@ func _process(_delta: float) -> void:
 ## Is there a roof over the player's head?
 func _under_roof() -> bool:
 	var from := player.camera.global_position
-	var q := PhysicsRayQueryParameters3D.create(from, from + Vector3.UP * 8.0, 1, [player.get_rid()])
+	var q := PhysicsRayQueryParameters3D.create(from, from + Vector3.UP * 8.0, 3, [player.get_rid()])
 	return not get_world_3d().direct_space_state.intersect_ray(q).is_empty()
 
 

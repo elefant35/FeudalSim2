@@ -15,3 +15,4 @@ food_value = 0.0
 has_quality = true
 crop = &""
 hotbar = false
+sack_model = &"grain_sack"

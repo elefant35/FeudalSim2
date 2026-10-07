@@ -10,7 +10,6 @@ const SIZE := 128
 const COMPOSITE := {
 	&"hands": [&"fp_arm"],
 	&"barley_chaff": [&"chaff_pile"], &"wheat_chaff": [&"chaff_pile"],
-	&"barley": [&"grain_sack"], &"wheat": [&"grain_sack"],
 }
 
 var _tex: Dictionary = {}       # id -> Texture2D
@@ -68,7 +67,7 @@ func _models_for(id: StringName) -> Array:
 	var it := Items.item(id)
 	if it and it.kind == ItemData.Kind.SEED:
 		return [&"seed_pouch", StringName("%s_s3" % it.crop)]
-	return [id]
+	return [Items.carry_model(id)]
 
 
 func _render(id: StringName) -> void:

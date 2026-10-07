@@ -14,6 +14,7 @@ const PLAN := {
 	3: [],
 }
 const SELL_AT := 10        ## Goods in the cart that make a trip to market worthwhile.
+const GRAIN_TRIP_AT := 6   ## Sacks of grain in the cart that make a trip to the mill worthwhile.
 const WATER_TO := 0.9       ## Top the soil up to moist; more than this risks soggy.
 const SOW_POINTS: Array[Vector2] = [Vector2(0.33, 0.33), Vector2(0.67, 0.33), Vector2(0.33, 0.67), Vector2(0.67, 0.67)]
 const CHAFF_TO_CLEAN := {&"barley_chaff": &"barley", &"wheat_chaff": &"wheat"}
@@ -58,7 +59,7 @@ func next_task() -> Task:
 	if npc.is_carrying():
 		var more := _gather_more_of(npc.carry_id) if npc.carry_space(npc.carry_id) > 0 else null
 		return more if more else _deliver()
-	for step: Callable in [_shoo, _place_scarecrow, _bind, _harvest, _reap, _thresh, _winnow, _fetch_piles, _market, _tend, _water, _sow, _till, _scarecrow_trip]:
+	for step: Callable in [_shoo, _place_scarecrow, _bind, _harvest, _reap, _thresh, _winnow, _fetch_piles, _market, _mill_trip, _tend, _water, _sow, _till, _scarecrow_trip]:
 		var t: Task = step.call()
 		if t:
 			return t
@@ -235,9 +236,44 @@ func _fetch_piles() -> Task:
 func _sellable_in_cart() -> int:
 	var n := 0
 	for st in cart.goods.stacks():
-		if Items.sell_value(st.id, st.quality) > 0:
+		if ProduceBuyer.buys(st.id):
 			n += st.count
 	return n
+
+
+func _grain_in_cart() -> int:
+	var n := 0
+	for st in cart.goods.stacks():
+		var it := Items.item(st.id)
+		if it and it.mills_to != &"":
+			n += st.count
+	return n
+
+
+## Clean grain goes to the miller: pull the cart to his store and sell it to him.
+func _mill_trip() -> Task:
+	var h := Clock.hour()
+	var sacks := _grain_in_cart()
+	var mill := _miller_mill()
+	if mill == null or h < 8.0 or h > 16.0 or sacks == 0 or cart.is_pulled():
+		return null
+	if sacks < GRAIN_TRIP_AT and not (h > 14.0 and sacks >= 2):
+		return null
+	if mill.store_count() >= PostMill.STORE_MAX or mill.keeper.wallet.gold < Items.sell_value(&"barley", 0):
+		return null   # he couldn't take it today
+	var sell := Work.new("Selling grain to the miller", &"idle", 2.0, func() -> void:
+		var earned := mill.buy_grain(npc)
+		sold_today += earned
+		npc.say("%d gold from %s for the grain." % [earned, mill.keeper.display_name] if earned > 0 else "He couldn't pay for it today."))
+	return CartTrip.make("Taking grain to the mill", npc, cart, mill.global_position + PostMill.STORE_AT + Vector3(-1.0, 0, 3.6), sell, FarmLayout.NB_CART)
+
+
+## The village mill: a windmill with a miller who buys grain.
+func _miller_mill() -> PostMill:
+	for m: PostMill in npc.get_tree().get_nodes_in_group("mill"):
+		if m.keeper != null and m.keeper != npc:
+			return m
+	return null
 
 
 ## A trip to market: pull the cart to the buyer, sell, shop at the stall, bring the cart home.
@@ -249,24 +285,12 @@ func _market() -> Task:
 	if goods < SELL_AT and not (h > 14.0 and goods >= 4):
 		return null
 	var buyer: ProduceBuyer = npc.get_tree().get_first_node_in_group("buyer")
-	var home_spot := FarmLayout.NB_CART
-	var steps: Array[Task] = [
-		GoTo.new(cart.handle_point(), 0.6, "Fetching the handcart"),
-		DoNow.new("", func() -> void: cart.grab(npc)),
-		GoTo.new(buyer.global_position + Vector3(4.5, 0, 2.6), 1.2, "Taking the harvest to market"),
-		DoNow.new("", func() -> void: cart.release(npc)),
-		Work.new("Selling", &"idle", 2.0, func() -> void:
-			var earned := buyer.sell_everything(npc)
-			sold_today += earned
-			npc.say("That's %d gold for my trouble." % earned)
-			_shop()),
-		_ToCart.new(cart),   # back round to the handles, wherever the cart ended up
-		DoNow.new("", func() -> void: cart.grab(npc)),
-		# Coming up from the lane, the cart trails behind (south), so stop a shaft short of its spot.
-		GoTo.new(home_spot - Vector3(0, 0, HandCart.SHAFT), 1.0, "Bringing the cart home"),
-		DoNow.new("", func() -> void: cart.release(npc)),
-	]
-	return Sequence.new("Going to market", steps)
+	var sell := Work.new("Selling", &"idle", 2.0, func() -> void:
+		var earned := buyer.sell_everything(npc)
+		sold_today += earned
+		npc.say("That's %d gold for my trouble." % earned)
+		_shop())
+	return CartTrip.make("Taking the harvest to market", npc, cart, buyer.global_position + Vector3(4.5, 0, 2.6), sell, FarmLayout.NB_CART)
 
 
 ## Buys what's needed while at the stall: seed for the beds, and bread if the larder's bare.
@@ -446,15 +470,3 @@ func from_dict(d: Dictionary) -> void:
 	seed_bed = int(d.get("seed_bed", -1))
 	crow_visits = int(d.get("crow_visits", 0))
 
-
-## Walk to wherever the cart's handles are now (they move when the cart is parked).
-class _ToCart extends GoTo:
-	var _cart: HandCart
-
-	func _init(c: HandCart) -> void:
-		super(Vector3.ZERO, 0.6, "Going back for the cart")
-		_cart = c
-
-	func start(npc: Npc) -> void:
-		target = _cart.handle_point()
-		super(npc)

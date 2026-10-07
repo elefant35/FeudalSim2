@@ -18,6 +18,7 @@ const EYE_HEIGHT := 1.6
 const HANDS := &"hands"
 const CARRYING := &"carrying"   ## held() while your arms are full of produce.
 const PULLING := &"pulling"     ## held() while pulling the handcart.
+const TAILPOLE := &"tailpole"   ## held() while walking a windmill round by its tailpole.
 
 
 var head := Node3D.new()
@@ -56,6 +57,7 @@ func _ready() -> void:
 	head.add_child(camera)
 	ray.target_position = Vector3(0, 0, -REACH)
 	ray.collide_with_areas = true
+	ray.collision_mask = 3
 	ray.add_exception(self)
 	camera.add_child(ray)
 	viewmodel = Viewmodel.new()
@@ -70,7 +72,7 @@ func _ready() -> void:
 ## What's in hand: the selected slot's item, or bare hands if the slot is empty or used up.
 func held() -> StringName:
 	if pulling:
-		return PULLING
+		return TAILPOLE if pulling is PostMill else PULLING
 	if is_carrying():
 		return CARRYING
 	var id := hotbar[held_index]
@@ -290,7 +292,7 @@ func _physics_process(delta: float) -> void:
 
 func _footstep_bank() -> String:
 	var down := get_world_3d().direct_space_state.intersect_ray(
-		PhysicsRayQueryParameters3D.create(global_position + Vector3.UP * 0.2, global_position + Vector3.DOWN * 0.4, 1, [get_rid()]))
+		PhysicsRayQueryParameters3D.create(global_position + Vector3.UP * 0.2, global_position + Vector3.DOWN * 0.4, 3, [get_rid()]))
 	if down and down.collider is Node and (down.collider as Node).is_in_group("wood_floor"):
 		return "step_wood"
 	return "step_grass"

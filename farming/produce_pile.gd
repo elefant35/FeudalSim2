@@ -27,11 +27,11 @@ func refresh() -> void:
 	var n := mini(units.size(), MAX_SHOWN)
 	var sheaf := String(id).ends_with("_sheaf")
 	var it := Items.item(id)
-	var sack := it != null and it.kind == ItemData.Kind.GRAIN and not sheaf
+	var sack := Items.is_sacked(id)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(id)
 	for i in n:
-		var m := Models.make(&"grain_sack" if sack else id)
+		var m := Models.make(Items.carry_model(id))
 		_visual.add_child(m)
 		if sheaf:
 			# Laid flat and stacked like a woodpile: three abreast, heads alternating, layer on layer.

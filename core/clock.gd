@@ -1,5 +1,5 @@
 extends Node
-## World clock: time of day, days, seasons, weather, and the 1x/2x/4x speed control.
+## World clock: time of day, days, seasons, weather (rain, wind), and the 1x/2x/4x speed control.
 ## Autoloaded as `Clock`. One day lasts REAL_SECONDS_PER_DAY at 1x.
 
 signal minutes_passed(minutes: float)   ## Awake time passing (not emitted while sleeping).
@@ -22,10 +22,22 @@ var speed_index: int = 0
 var paused: bool = false
 var raining: bool = false
 var rng := RandomNumberGenerator.new()
+## The wind follows smooth noise through game time, so it's the same for everyone at a given
+## moment and only its seed needs saving. Tests and dev runs can pin it with set_wind().
+var wind_seed: int = 1
+var _wind_noise := FastNoiseLite.new()
+var _wind_fixed: Variant = null   # [bearing_from, strength] while pinned
+
+const WIND_NAMES: Array[String] = ["calm", "light air", "light breeze", "fresh breeze", "strong breeze", "gale"]
+const WIND_STEPS: Array[float] = [0.12, 0.25, 0.42, 0.62, 0.82]
+const COMPASS: Array[String] = ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"]
+const PREVAILING := 4.3          ## Bearing the wind mostly comes from (radians; ~west-south-west).
+const SEASON_WIND: Array[float] = [0.05, -0.08, 0.06, 0.1]
 
 
 func _ready() -> void:
 	rng.randomize()
+	_set_wind_seed(rng.randi())
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 
 
@@ -59,6 +71,62 @@ func skip_to_hour(hour: float) -> float:
 func _start_day(d: int) -> void:
 	raining = rng.randf() < RAIN_CHANCE[season_of(d)]
 	day_started.emit(d)
+
+
+# --- Wind --------------------------------------------------------------------------------------
+
+func _set_wind_seed(s: int) -> void:
+	wind_seed = s
+	_wind_noise.seed = s
+	_wind_noise.frequency = 1.0
+
+
+## Where the wind blows from, as a compass bearing in radians (0 = north, PI/2 = east).
+func wind_from() -> float:
+	if _wind_fixed != null:
+		return _wind_fixed[0]
+	var t := total_minutes
+	return fposmod(PREVAILING + _wind_noise.get_noise_1d(t / 700.0) * 2.4 + _wind_noise.get_noise_1d(t / 97.0 + 300.0) * 0.35, TAU)
+
+
+## How hard it's blowing, 0 (dead calm) to 1 (a gale). Changes over hours; days differ.
+func wind_strength() -> float:
+	if _wind_fixed != null:
+		return _wind_fixed[1]
+	var t := total_minutes
+	var days := _wind_noise.get_noise_1d(t / 1100.0 + 900.0) * 0.55
+	var hours := _wind_noise.get_noise_1d(t / 110.0 + 1700.0) * 0.22
+	return clampf(0.42 + days + hours + SEASON_WIND[season()], 0.0, 1.0)
+
+
+## The direction the wind blows towards (world, horizontal, unit length).
+func wind_dir() -> Vector3:
+	var b := wind_from()
+	return -Vector3(sin(b), 0.0, -cos(b))
+
+
+## Pins the wind (tests, dev runs). bearing_from in radians; pass a negative strength to unpin.
+func set_wind(bearing_from: float, strength: float) -> void:
+	_wind_fixed = null if strength < 0.0 else [fposmod(bearing_from, TAU), clampf(strength, 0.0, 1.0)]
+
+
+static func wind_name(strength: float) -> String:
+	var i := 0
+	while i < WIND_STEPS.size() and strength >= WIND_STEPS[i]:
+		i += 1
+	return WIND_NAMES[i]
+
+
+static func compass_name(bearing: float) -> String:
+	return COMPASS[int(roundf(fposmod(bearing, TAU) / (TAU / 8.0))) % 8]
+
+
+## "A fresh breeze from the west."
+func wind_string() -> String:
+	var s := wind_strength()
+	if s < WIND_STEPS[0]:
+		return "Dead calm"
+	return "A %s from the %s" % [wind_name(s), compass_name(wind_from())]
 
 
 func speed() -> int:
@@ -109,13 +177,14 @@ func date_string() -> String:
 
 
 func to_dict() -> Dictionary:
-	return {"total_minutes": total_minutes, "raining": raining, "speed_index": speed_index}
+	return {"total_minutes": total_minutes, "raining": raining, "speed_index": speed_index, "wind_seed": wind_seed}
 
 
 func from_dict(d: Dictionary) -> void:
 	total_minutes = float(d.get("total_minutes", START_HOUR * 60.0))
 	raining = bool(d.get("raining", false))
 	speed_index = int(d.get("speed_index", 0))
+	_set_wind_seed(int(d.get("wind_seed", rng.randi())))
 	speed_changed.emit(speed())
 
 
@@ -123,4 +192,6 @@ func reset() -> void:
 	total_minutes = START_HOUR * 60.0
 	raining = false
 	speed_index = 0
+	_set_wind_seed(rng.randi())
+	_wind_fixed = null
 	speed_changed.emit(speed())

@@ -2,7 +2,7 @@ class_name ItemData
 extends Resource
 ## One kind of item: tools, seeds, produce, food. Lives as a .tres file so any chunk can use it.
 
-enum Kind { TOOL, SEED, PRODUCE, FOOD, GRAIN, PLACEABLE }
+enum Kind { TOOL, SEED, PRODUCE, FOOD, GRAIN, PLACEABLE, FLOUR }
 
 @export var id: StringName
 @export var display_name: String = ""
@@ -28,3 +28,7 @@ enum Kind { TOOL, SEED, PRODUCE, FOOD, GRAIN, PLACEABLE }
 ## Grain that can be kept back as seed: one unit becomes `sow_quantity` of this seed item.
 @export var sow_as: StringName
 @export var sow_quantity: int = 0
+## Clean grain that a mill grinds into this (wheat -> wheat flour).
+@export var mills_to: StringName
+## Goods that travel in sacks (clean grain, flour) show this model when carried, piled or carted.
+@export var sack_model: StringName

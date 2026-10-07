@@ -298,6 +298,8 @@ func _refresh_hotbar() -> void:
 		_held_label.text = "Carrying %s  ·  E to set down" % player.carry_text()
 	elif held == Player.PULLING:
 		_held_label.text = "Pulling the handcart  ·  E to let go"
+	elif held == Player.TAILPOLE:
+		_held_label.text = "On the tailpole: walk round to turn the mill  ·  E to let go"
 	elif held == Player.HANDS:
 		_held_label.text = "Hands"
 	else:

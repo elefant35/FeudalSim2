@@ -29,6 +29,7 @@ var _held_id: StringName = &""
 var _action: StringName = &""
 var _walking := false
 var _walk_target := Vector3.ZERO
+var _walk_direct := false   ## Straight at the target, ignoring the navigation mesh (indoors, up steps).
 var _agent := NavigationAgent3D.new()
 var _bubble := Label3D.new()
 var _bubble_t := 0.0
@@ -147,10 +148,12 @@ func interrupt() -> void:
 
 # --- Body ------------------------------------------------------------------------------------
 
-func walk_to(p: Vector3) -> void:
+func walk_to(p: Vector3, direct: bool = false) -> void:
 	_walking = true
 	_walk_target = p
-	_agent.target_position = p
+	_walk_direct = direct
+	if not direct:
+		_agent.target_position = p
 
 
 func stop_walking() -> void:
@@ -163,7 +166,7 @@ func _move(delta: float) -> void:
 	var dir := Vector3.ZERO
 	if _walking and not instant and not sleeping:
 		var next := _walk_target
-		if NavigationServer3D.map_get_iteration_id(_agent.get_navigation_map()) > 0:
+		if not _walk_direct and NavigationServer3D.map_get_iteration_id(_agent.get_navigation_map()) > 0:
 			next = _agent.get_next_path_position()
 		dir = Vector3(next.x - global_position.x, 0, next.z - global_position.z)
 		if dir.length() > 0.05:

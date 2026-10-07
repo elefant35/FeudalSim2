@@ -1,9 +1,16 @@
 class_name ProduceBuyer
 extends StaticBody3D
-## The miller's cart: buys produce and clean grain from your arms, your pack, or a handcart
-## parked beside it. Better quality fetches more.
+## A merchant's cart: buys produce, and flour and meal from the mills (until there's a baker to
+## sell it to), from your arms, your pack, or a handcart parked beside it. Better quality fetches
+## more. Grain goes to a mill, not here: grind it yourself, or sell it to the miller.
 
 const CART_RANGE := 9.0
+
+
+## Whether the buyer will take this at all.
+static func buys(id: StringName) -> bool:
+	var it := Items.item(id)
+	return it != null and Items.sell_value(id, 1) > 0 and it.kind in [ItemData.Kind.PRODUCE, ItemData.Kind.FLOUR]
 
 
 func get_prompt(player: Player) -> String:
@@ -47,7 +54,7 @@ func _sources(actor: Actor) -> Array:
 ## Returns the gold earned. (What a farmer NPC does at market.)
 func sell_everything(actor: Actor) -> int:
 	var total := 0
-	if actor.is_carrying() and Items.sell_value(actor.carry_id, 1) > 0:
+	if actor.is_carrying() and buys(actor.carry_id):
 		var id := actor.carry_id
 		for q in actor.take_carry():
 			total += Items.sell_value(id, q)
@@ -56,8 +63,7 @@ func sell_everything(actor: Actor) -> int:
 		invs.append(src[1])
 	for inv: Inventory in invs:
 		for st in inv.stacks():
-			var it := Items.item(st.id)
-			if it == null or it.kind == ItemData.Kind.FOOD:
+			if not buys(st.id):
 				continue
 			var each := Items.sell_value(st.id, st.quality)
 			if each > 0 and inv.remove(st.id, st.count, st.quality):
@@ -90,7 +96,7 @@ func _rows(player: Player) -> Array:
 			var q: int = st.quality
 			_add_row(rows, src[0], id, q, st.count, func(n: int) -> void: _sell_from(player, inv, id, q, n))
 	if rows.is_empty() and not player.is_carrying():
-		rows.append({"label": "Bring produce or clean grain in your arms, or park your handcart (or a barrel) beside the buyer.", "buttons": []})
+		rows.append({"label": "Bring produce, flour or meal in your arms, or park your handcart (or a barrel) beside the buyer.", "buttons": []})
 	return rows
 
 
@@ -98,10 +104,12 @@ func _add_row(rows: Array, where: String, id: StringName, q: int, count: int, se
 	var it := Items.item(id)
 	if it == null or it.kind in [ItemData.Kind.TOOL, ItemData.Kind.SEED, ItemData.Kind.PLACEABLE, ItemData.Kind.FOOD]:
 		return
+	if it.kind == ItemData.Kind.GRAIN:
+		var why := "take it to a mill: grind it in your windmill, or sell it to Osric the miller" if it.mills_to != &"" else "not wanted until threshed and winnowed"
+		rows.append({"label": "%s ×%d · %s" % [Items.name_of(id, q), count, why], "tooltip": where, "buttons": []})
+		return
 	var each := Items.sell_value(id, q)
 	if each <= 0:
-		if it.kind == ItemData.Kind.GRAIN:
-			rows.append({"label": "%s ×%d · not wanted until threshed and winnowed" % [Items.name_of(id, q), count], "tooltip": where, "buttons": []})
 		return
 	rows.append({"label": "%s ×%d · %d gold each" % [Items.name_of(id, q), count, each], "tooltip": where, "buttons": [
 		{"text": "Sell 1", "enabled": true, "action": func() -> void: sell.call(1)},

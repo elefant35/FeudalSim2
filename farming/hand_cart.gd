@@ -230,12 +230,12 @@ func _refresh_contents() -> void:
 	for st in goods.stacks():
 		var it := Items.item(st.id)
 		var sheaf := String(st.id).ends_with("_sheaf")
-		var sack := it.kind == ItemData.Kind.GRAIN and not sheaf
+		var sack := Items.is_sacked(st.id)
 		var shown := mini(int(st.count), 4 if sack else 10)
 		for k in shown:
 			if i >= 30:
 				return
-			var m := Models.make(&"grain_sack" if sack else st.id)
+			var m := Models.make(Items.carry_model(st.id))
 			var col := i % 4
 			var row := (i / 4) % 5
 			var layer := i / 20

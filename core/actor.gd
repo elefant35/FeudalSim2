@@ -29,6 +29,7 @@ var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 
 
 func _ready() -> void:
+	collision_mask = 3   # the static world (1) and moving buildings like a windmill's body (2)
 	needs.name = "Needs"
 	wallet.name = "Wallet"
 	inventory.name = "Inventory"

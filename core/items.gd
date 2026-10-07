@@ -1,7 +1,7 @@
 extends Node
 ## Item and crop database, loaded from .tres files. Autoloaded as `Items`.
 
-const DATA_DIRS: Array[String] = ["res://farming/data/items", "res://farming/data/crops"]
+const DATA_DIRS: Array[String] = ["res://farming/data/items", "res://farming/data/crops", "res://milling/data/items"]
 const QUALITY_NAMES: Array[String] = ["Poor", "Fair", "Good", "Fine"]
 const QUALITY_PRICE: Array[float] = [0.6, 1.0, 1.35, 1.75]
 
@@ -45,6 +45,16 @@ func name_of(id: StringName, quality: int = -1) -> String:
 	if quality >= 0:
 		n = "%s %s" % [QUALITY_NAMES[quality], n.to_lower()]
 	return n
+
+
+## The model that stands for one unit when carried, piled or carted (a sack, or the item itself).
+func carry_model(id: StringName) -> StringName:
+	var it := item(id)
+	return it.sack_model if it and it.sack_model != &"" else id
+
+
+func is_sacked(id: StringName) -> bool:
+	return carry_model(id) != id
 
 
 ## What the produce buyer pays for one unit.

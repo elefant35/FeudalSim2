@@ -572,7 +572,7 @@ func test_a_market_trip_cut_short_lets_go_of_the_cart() -> void:
 	cart.goods.add(&"turnip", 12, 1)
 	Clock.total_minutes = Clock.day() * Clock.MINUTES_PER_DAY + 10 * 60
 	var trip: Task = wynn.role.next_task()
-	check(trip != null and trip.label == "Going to market", "off to market")
+	check(trip != null and trip.label == "Taking the harvest to market", "off to market")
 	wynn._task = trip
 	trip.start(wynn)
 	trip.update(wynn, 0.1)   # walk to the handles

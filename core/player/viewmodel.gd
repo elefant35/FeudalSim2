@@ -95,6 +95,11 @@ func _build_specs() -> void:
 			"rest": _pose(Vector3(0, -0.33, -0.48), Vector3(0, 1, 0), Vector3(0, 0, -1)),
 			"jerk": _pose(Vector3(0, -0.37, -0.32), Vector3(0, 1, 0.2), Vector3(0, 0, -1)),
 		}},
+		# Both fists on a windmill's tailpole, the beam rising ahead of you to the mill.
+		&"tailpole": {"grip_r": Vector3(0.09, 0, 0.05), "grip_l": Vector3(-0.09, 0, -0.25), "roll_r": 1.5, "roll_l": -1.5, "poses": {
+			"rest": _pose(Vector3(0, -0.36, -0.42), Vector3(0, 1, 0), Vector3(0, 0, -1)),
+			"jerk": _pose(Vector3(0, -0.38, -0.3), Vector3(0, 1, 0.2), Vector3(0, 0, -1)),
+		}},
 	}
 
 
@@ -164,7 +169,7 @@ func _build_armful() -> Node3D:
 	var it := Items.item(_carry_id)
 	var n := mini(_carry_count, 5)
 	var sheaf := String(_carry_id).ends_with("_sheaf")
-	var sack := it != null and it.kind == ItemData.Kind.GRAIN and not sheaf
+	var sack := Items.is_sacked(_carry_id)
 	if _carry_id == &"barrel":
 		var b := Models.make(&"barrel")
 		b.scale = Vector3.ONE * 0.75
@@ -172,7 +177,7 @@ func _build_armful() -> Node3D:
 		root.add_child(b)
 		return root
 	for i in n:
-		var m := Models.make(&"grain_sack" if sack else _carry_id)
+		var m := Models.make(Items.carry_model(_carry_id))
 		root.add_child(m)
 		if sheaf:   # sheaves lie across the arms
 			m.rotation = Vector3(0, 0.15 * i, PI / 2)
@@ -204,6 +209,16 @@ func _build_shafts() -> Node3D:
 	return root
 
 
+## A windmill's tailpole: one great beam, both hands on it, running back up to the mill.
+func _build_tailpole() -> Node3D:
+	var root := Node3D.new()
+	var pivot := Node3D.new()
+	pivot.rotation.x = -0.25   # rising away towards the mill
+	root.add_child(pivot)
+	pivot.add_child(Models.box(Vector3(0.13, 0.13, 2.2), Color(0.33, 0.22, 0.13), Vector3(0, 0, -1.0)))
+	return root
+
+
 ## The cart caught on something: a jolt through the arms.
 func play_jerk() -> void:
 	_animate([[_pose_named("jerk"), 0.08], [_pose_named("rest"), 0.35]])
@@ -224,8 +239,8 @@ func set_held(id: StringName) -> void:
 		_model = _build_armful()
 		add_child(_model)
 		_no_shadows(_model)
-	elif id == Player.PULLING:
-		_model = _build_shafts()
+	elif id == Player.PULLING or id == Player.TAILPOLE:
+		_model = _build_shafts() if id == Player.PULLING else _build_tailpole()
 		add_child(_model)
 		_no_shadows(_model)
 	elif _spec.has("model"):

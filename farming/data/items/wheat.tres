@@ -18,3 +18,5 @@ hotbar = false
 carry_max = 4
 sow_as = &"wheat_seed"
 sow_quantity = 6
+sack_model = &"grain_sack"
+mills_to = &"wheat_flour"
