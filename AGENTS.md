@@ -39,11 +39,12 @@ A chunk is done when:
 
 **Roadmap** (Tyler decides the order; ask before starting a new chunk):
 1. **Farming**, with basic needs (eat, sleep), gold, a tool shop and a produce buyer. *(done)*
-2. **A farmer NPC** who works his own farm with the player's rules. *← current*
-3. Baking (probably): flour, ovens, bread, and a baker NPC
-4. Market
-5. Tool craftsmen
-6. Later: more professions, the settlement, society, conflict
+2. **A farmer NPC** who works his own farm with the player's rules. *(done)*
+3. **The mill**: your own post windmill, and Osric the miller working the village mill. *← current*
+4. **The bakery**: ovens, dough and bread, and a baker NPC (buys the miller's flour, stocks the stall)
+5. Market
+6. Tool craftsmen
+7. Later: more professions, the settlement, society, conflict
 
 Each profession now comes in two halves: the player's first-person version (minigames), then a
 villager who can step into the same role.

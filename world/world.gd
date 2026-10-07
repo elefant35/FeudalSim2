@@ -35,7 +35,7 @@ func _ready() -> void:
 	if OS.get_environment("FEUDALSIM_TEST") != "1":
 		NavBaker.bake(self)
 	hud.objective = _objective
-	hud.guide_sections = FarmGuide.sections
+	hud.guide_sections = func() -> Array: return FarmGuide.sections() + MillGuide.sections()
 	if DevTools.no_save() or not load_game():
 		_start_fresh()
 	print("FeudalSim2 world ready")
@@ -45,7 +45,12 @@ func _ready() -> void:
 
 
 func _objective() -> String:
-	return FarmGuide.next_step(player, $Field, $ThreshingFloor, $Piles, $HandCart)
+	var step := FarmGuide.needs_step(player)
+	if step == "":
+		step = MillGuide.next_step(player, $Windmill)
+	if step == "":
+		step = FarmGuide.next_step(player, $Field, $ThreshingFloor, $Piles, $HandCart)
+	return step
 
 
 func _start_fresh() -> void:
@@ -380,6 +385,24 @@ func dev_scenario(scenario: String) -> void:
 				if i == 6:
 					s.plants[4] = PlotState.Plant.BLIGHTED
 				field.plots[i].refresh()
+		"mill":
+			# Your windmill with sacks of wheat to grind, beside the steps; the mill facing north.
+			var mill: PostMill = $Windmill
+			mill.turn_to(0.0)
+			var sacks: Array[int] = [2, 2, 1, 1, 2, 1]
+			($Piles as Piles).put(&"wheat", sacks, mill.to_global(Vector3(-2.5, 0, 5.5)))
+			player.global_position = mill.to_global(Vector3(0, 0, 8.5))
+			player.rotation.y = 0.0
+		"millwork":
+			# Your mill already grinding (facing the wind, sails set, brake off), you inside.
+			var mill: PostMill = $Windmill
+			mill.turn_to(mill.wind_heading())
+			mill.cloth = 3
+			mill.set_gap(0.25)
+			mill.hopper.add(&"wheat", 3, 2)
+			mill.bin.add(&"wheat_flour", 2, 2)
+			mill.brake_on = false
+			mill.speed = 0.45
 		"tools":
 			for id: StringName in [&"bucket", &"sickle", &"flail", &"winnowing_basket", &"scarecrow"]:
 				player.inventory.add(id)

@@ -11,6 +11,9 @@ See [docs/00-vision-original.md](docs/00-vision-original.md) for the long-term v
 - **Chunk 2: A farmer NPC** is playable. **Wynn**, your neighbour, farms the smallholding east of
   yours by the same rules. Watch him work, or press E to talk. See
   [docs/chunks/02-farmer-npc.md](docs/chunks/02-farmer-npc.md).
+- **Chunk 3: The mill** is playable. You have your own post windmill north-west of the house, and
+  **Osric** the miller works the village mill to the north, buying grain from you and Wynn. See
+  [docs/chunks/03-mill.md](docs/chunks/03-mill.md).
 
 ## Running
 
@@ -61,6 +64,21 @@ turnip seed, a small store of food (five loaves, four turnips) and 12 gold. Ever
 8. Load the cart, grab its handles (**E** at the front) and pull it down the lane. Park it beside the
    **Produce Bought** cart and sell straight from it. Better quality earns more.
 
+**Milling.** Raw grain isn't wanted at the Produce Bought cart: take it to a mill. Either sell it to
+**Osric** at his grain store beside the village mill (north), or grind it yourself in **your windmill**
+(north-west of your house) and sell the flour, which is worth more.
+1. **Face the wind.** The whole mill turns on its post. Take the **tailpole** (E at its end, beside the
+   steps) and walk slowly round until the sails face into the wind. Its prompt names the wind and how far
+   off you are.
+2. **Set the sails.** With the brake on and the sails stopped, E at the sails spreads more cloth and a click
+   takes some in. Light winds want full sail; strong winds want it reefed, or the sails run away.
+3. **Fill the hopper.** Carry sacks of clean grain up the steps and tip them in (E).
+4. **Let the brake off** (the lever inside). The stones grind into the meal bin.
+5. **Tend the stones.** Feel the meal at the spout (E). *Hot* means the stones are too close for the speed:
+   hold click on the tentering lever and move the mouse up to open them. *Gritty* means they're too far
+   apart. Fine, cool meal keeps the grain's quality; rough or scorched meal loses a grade or two.
+6. Take the sacks from the bin (E) and sell flour or meal at the Produce Bought cart.
+
 **Saving seed.** Leave a ripe turnip or cabbage in the ground and after 3 days it bolts: a yellow
 flowering stalk shoots up. Pull it then for 2 handfuls of seed (instead of the vegetable). Barley and wheat
 are their own seed: while carrying a sack of clean grain, open your pack (Tab) and keep it as seed
@@ -100,7 +118,7 @@ or the mini-games. At 1× a day lasts about 15 minutes.
 | Shift / Space | Run / jump |
 | Left click (hold) | Use what's in your hand |
 | Right click | Stop the current task |
-| E | Interact: bed, stall, piles, cart, threshing floor. Sets down what you're carrying; takes or lets go of the handcart |
+| E | Interact: bed, stall, piles, cart, threshing floor, the mill's parts. Sets down what you're carrying; takes or lets go of the handcart or a windmill's tailpole |
 | F | Eat |
 | Tab | Pack: your items as icons. Drag tools and seed onto hotbar slots (or back off them). Click an item for its details and actions (Eat). Shift-click moves to/from the hotbar |
 | G | Field guide: what to sow this season, and every crop's steps from field to market |

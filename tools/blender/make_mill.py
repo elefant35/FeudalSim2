@@ -161,9 +161,9 @@ def post_mill_body():
     parts.append(gseg("tailpole", (0.8, FLOOR - 0.35, HZ - 0.4), TAIL_END, 0.1, "wood_dark", 6))
     parts.append(gseg("tail_grip", TAIL_END, (TAIL_END[0], TAIL_END[1] - 0.1, TAIL_END[2] + 0.35), 0.07, "leather", 6))
     # Inside: the stones on their platform, in a wooden vat, under the hopper.
-    parts.append(gbox("hurst", (1.5, 0.4, 1.5), (0, FLOOR + 0.2, -1.0), "wood_dark"))
-    parts.append(cyl("vat", 0.66, 0.45, G(0, FLOOR + 0.625, -1.0), "wood_light", verts=12))
-    parts.append(torus("vat_hoop", 0.67, 0.015, G(0, FLOOR + 0.7, -1.0), "iron", seg=12))
+    parts.append(gbox("hurst", (1.3, 0.4, 1.3), (0, FLOOR + 0.2, -1.0), "wood_dark"))
+    parts.append(cyl("vat", 0.62, 0.45, G(0, FLOOR + 0.625, -1.0), "wood_light", verts=12))
+    parts.append(torus("vat_hoop", 0.63, 0.015, G(0, FLOOR + 0.7, -1.0), "iron", seg=12))
     parts.append(cyl("stone_eye", 0.2, 0.03, G(0, FLOOR + 0.86, -1.0), "millstone", verts=10))
     for i, (x, z) in enumerate([(-0.38, -0.62), (0.38, -0.62), (-0.38, -1.38), (0.38, -1.38)]):   # the horse
         parts.append(gseg(f"horse{i}", (x, FLOOR + 0.85, z), (x * 0.9, FLOOR + 1.1, -1.0 + (z + 1.0) * 0.9), 0.025, "wood_dark", 4))
@@ -174,8 +174,8 @@ def post_mill_body():
     parts.append(solidify(mesh_obj("hopper", hv, [(0, 1, 2, 3), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)], "wood_light"), 0.03))
     parts.append(gbox("shoe", (0.16, 0.06, 0.4), (0, FLOOR + 1.0, -0.95), "wood_dark"))
     # The meal spout down into the bin.
-    parts.append(gseg("spout", (0.6, FLOOR + 0.6, -0.8), (1.02, FLOOR + 0.52, -0.5), 0.07, "wood_dark", 4))
-    parts.append(open_box("bin", (0.55, 0.6, 0.7), (1.2, FLOOR + 0.3, -0.3), "wood_light"))
+    parts.append(gseg("spout", (0.58, FLOOR + 0.62, -1.0), (1.02, FLOOR + 0.5, -1.0), 0.07, "wood_dark", 4))
+    parts.append(open_box("bin", (0.55, 0.6, 0.7), (1.2, FLOOR + 0.3, -1.0), "wood_light"))
     # Odds and ends: sacks in the corner, a broom.
     parts.append(ball("sack_a", 0.2, G(-1.35, FLOOR + 0.3, 1.6), "sack", scale=(1, 0.85, 1.4), subdiv=2))
     parts.append(ball("sack_b", 0.2, G(-1.0, FLOOR + 0.28, 1.75), "flour_sack", scale=(1, 0.85, 1.3), subdiv=2))
@@ -191,19 +191,20 @@ def post_mill_body():
     grain = mesh_obj("grain", gv, [(0, 2, 1), (0, 3, 2), (0, 4, 3), (0, 1, 4), (1, 2, 3, 4)], "grain")
     grain.location = G(0, apex, -1.0)
     # Meal in the bin (scaled up from the bottom as it fills).
-    meal = gbox("meal", (0.48, 0.52, 0.62), (1.2, FLOOR + 0.04 + 0.26, -0.3), "flour")
-    set_origin(meal, G(1.2, FLOOR + 0.04, -0.3))
+    meal = gbox("meal", (0.48, 0.52, 0.62), (1.2, FLOOR + 0.04 + 0.26, -1.0), "flour")
+    set_origin(meal, G(1.2, FLOOR + 0.04, -1.0))
     # Brake lever and tentering lever, pivoting at their feet.
     brake = join([gseg("brake_beam", (-1.35, FLOOR + 0.05, -1.35), (-1.35, FLOOR + 1.55, -1.3), 0.05, "wood_dark", 6),
                   gseg("brake_rope", (-1.35, FLOOR + 1.55, -1.3), (-1.35, EAVE - 0.1, -1.4), 0.012, "rope", 4),
                   ball("brake_knob", 0.06, G(-1.35, FLOOR + 1.55, -1.3), "wood")], "brake_lever")
     set_origin(brake, G(-1.35, FLOOR + 0.05, -1.35))
-    tenter = join([gseg("tenter_beam", (1.35, FLOOR + 0.05, -1.75), (1.35, FLOOR + 1.15, -1.7), 0.04, "wood_dark", 6),
-                   ball("tenter_weight", 0.09, G(1.35, FLOOR + 0.85, -1.72), "iron"),
-                   ball("tenter_knob", 0.05, G(1.35, FLOOR + 1.15, -1.7), "wood")], "tenter_lever")
-    set_origin(tenter, G(1.35, FLOOR + 0.05, -1.75))
+    tx, tz = -0.95, -0.15   # the tentering lever, at the stones' back corner
+    tenter = join([gseg("tenter_beam", (tx, FLOOR + 0.05, tz), (tx, FLOOR + 1.15, tz + 0.05), 0.04, "wood_dark", 6),
+                   ball("tenter_weight", 0.09, G(tx, FLOOR + 0.85, tz + 0.03), "iron"),
+                   ball("tenter_knob", 0.05, G(tx, FLOOR + 1.15, tz + 0.05), "wood")], "tenter_lever")
+    set_origin(tenter, G(tx, FLOOR + 0.05, tz))
     gbox("lever_foot_b", (0.2, 0.1, 0.2), (-1.35, FLOOR + 0.05, -1.35), "iron")
-    gbox("lever_foot_t", (0.2, 0.1, 0.2), (1.35, FLOOR + 0.05, -1.75), "iron")
+    gbox("lever_foot_t", (0.2, 0.1, 0.2), (tx, FLOOR + 0.05, tz), "iron")
     export("post_mill_body")
 
 

@@ -131,4 +131,58 @@ for _ in range(38):
 fade = SR * 2
 x[:fade] = x[:fade] * np.linspace(0, 1, fade) + x[-fade:] * np.linspace(1, 0, fade)
 save("ambience_day", x[:-fade])
+# --- The windmill ------------------------------------------------------------------------------
+
+def loop_crossfade(x, fade_sec):
+    fade = int(SR * fade_sec)
+    x = x.copy()
+    x[:fade] = x[:fade] * np.linspace(0, 1, fade) + x[-fade:] * np.linspace(1, 0, fade)
+    return x[:-fade]
+
+
+# Sails going round: a low whoom as each of the four sails sweeps past, over the wind. The game
+# raises the pitch (and so the pace) as the sails speed up. Loops cleanly (5 sweeps in 4 s).
+sec, fade_sec = 4.0, 0.4
+n = int(SR * (sec + fade_sec))
+t = np.arange(n) / SR
+air = lowpass(lowpass(rng.uniform(-1, 1, n), 0.02), 0.08)
+sweep = np.maximum(0, np.sin(2 * np.pi * t * 5 / sec)) ** 3
+body = lowpass(rng.uniform(-1, 1, n), 0.035) * sweep
+save("mill_sails", loop_crossfade(air * 0.35 + body * 1.4, fade_sec))
+
+# Millstones grinding: a deep rumble, the grit of the meal, and the wooden cogs knocking.
+sec, fade_sec = 3.0, 0.3
+n = int(SR * (sec + fade_sec))
+t = np.arange(n) / SR
+rumble = lowpass(lowpass(rng.uniform(-1, 1, n), 0.006), 0.02) * (1 + 0.3 * np.sin(2 * np.pi * 2.0 * t))
+grit = highpass(rng.uniform(-1, 1, n), 0.4) * 0.05 * (0.6 + 0.4 * np.sin(2 * np.pi * 6.0 * t))
+cogs = np.zeros(n)
+for k in range(int((sec + fade_sec) * 8)):
+    i = int(k / 8 * SR)
+    m = int(SR * 0.025)
+    if i + m < n:
+        cogs[i:i + m] += lowpass(rng.uniform(-1, 1, m), 0.2) * env(m, 0.02, 4) * 0.5
+save("mill_stones", loop_crossfade(rumble * 6.0 + grit + cogs, fade_sec))
+
+# The brake biting on the wheel: a wooden groan and a thump.
+n = int(SR * 0.9)
+t = np.arange(n) / SR
+f = 180 + 60 * np.sin(2 * np.pi * 7 * t) + rng.normal(0, 20, n).cumsum() / 400
+groan = np.sign(np.sin(2 * np.pi * np.cumsum(f) / SR)) * env(n, 0.05, 1.5) * 0.25
+groan = lowpass(groan, 0.12)
+thump = np.zeros(n)
+m = int(SR * 0.15)
+thump[:m] = lowpass(rng.uniform(-1, 1, m), 0.03) * env(m, 0.01, 3) * 2.0
+save("brake_1", groan + thump)
+
+# Sail cloth being spread or furled: a few heavy canvas flaps.
+for i in range(2):
+    x = np.zeros(int(SR * 0.9))
+    for k in range(3 + i):
+        st = int(SR * (0.05 + k * rng.uniform(0.15, 0.22)))
+        m = int(SR * 0.12)
+        if st + m < len(x):
+            x[st:st + m] += lowpass(rng.uniform(-1, 1, m), 0.25) * env(m, 0.1, 2.5) * rng.uniform(0.6, 1.0)
+    save(f"cloth_{i + 1}", x)
+
 print("synth done")

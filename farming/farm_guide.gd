@@ -15,15 +15,30 @@ static func _count_any(inv: Inventory, ids: Array) -> int:
 	return n
 
 
-## The most useful next step, in the order the work flows.
-static func next_step(player: Player, field: Field, floor_: ThreshingFloor, piles: Piles, cart: HandCart) -> String:
-	var inv := player.inventory
+## Eating and sleeping come before any work.
+static func needs_step(player: Player) -> String:
 	if player.needs.hunger < Needs.HUNGRY:
 		return "You're hungry. Press F to eat."
 	if player.needs.energy < Needs.TIRED:
 		return "You're exhausted. Go home and sleep in your bed (E)."
+	return ""
 
-	var cart_goods := cart.count() if cart else 0
+
+## The most useful next step, in the order the work flows.
+static func next_step(player: Player, field: Field, floor_: ThreshingFloor, piles: Piles, cart: HandCart) -> String:
+	var inv := player.inventory
+	var need := needs_step(player)
+	if need != "":
+		return need
+
+	var cart_goods := 0
+	var cart_grain := 0
+	if cart:
+		for st in cart.goods.stacks():
+			if ProduceBuyer.buys(st.id):
+				cart_goods += st.count
+			elif FarmGuide.CLEAN.has(st.id):
+				cart_grain += st.count
 	var buyer := player.get_tree().get_first_node_in_group("buyer") as Node3D
 	var cart_at_buyer := cart != null and buyer != null and cart.global_position.distance_to(buyer.global_position) < ProduceBuyer.CART_RANGE
 	if player.pulling:
@@ -36,7 +51,7 @@ static func next_step(player: Player, field: Field, floor_: ThreshingFloor, pile
 		if FarmGuide.SHEAVES.has(player.carry_id):
 			return "Lay your sheaves on the threshing floor (E there), or stack them on the grass (E)."
 		if FarmGuide.CLEAN.has(player.carry_id):
-			return "Load the grain into the handcart (E on it), or carry it to the buyer."
+			return "Take the grain to a mill: your windmill's hopper, or Osric's grain store. (Or load the handcart first.)"
 		return "Set your %s down: in the handcart (E on it), or on the grass as a pile (E)." % player.carry_text()
 
 	var cut := 0
@@ -64,7 +79,7 @@ static func next_step(player: Player, field: Field, floor_: ThreshingFloor, pile
 	if floor_.has_sheaves():
 		if not inv.has(&"flail"):
 			return "Buy a flail at Tools & Seed to thresh the sheaves on the threshing floor."
-		return "Thresh: hold the flail at the threshing floor and click as the ring closes."
+		return "Thresh: hold the flail at the threshing floor; move the mouse up to raise it, then swing it down hard."
 	if floor_.heap_count() > 0:
 		if not inv.has(&"winnowing_basket"):
 			return "Buy a winnowing basket at Tools & Seed to clean the threshed grain."
@@ -80,7 +95,7 @@ static func next_step(player: Player, field: Field, floor_: ThreshingFloor, pile
 		else:
 			produce_piles += 1
 	if grain_piles > 0:
-		return "Pick up the sacks of clean grain beside the threshing floor (E) and take them to the handcart or buyer."
+		return "Pick up the sacks of clean grain beside the threshing floor (E) and take them to a mill (yours, or Osric's)."
 	if sheaf_piles > 0:
 		return "Carry the sheaves from your stack to the threshing floor (E to pick up, E at the floor to lay them)."
 	if ripe_grain:
@@ -97,6 +112,8 @@ static func next_step(player: Player, field: Field, floor_: ThreshingFloor, pile
 		if cart_at_buyer:
 			return "Sell from your handcart at the Produce Buyer (E)."
 		return "Pull your handcart (E at its handles) to the Produce Bought cart on the lane and sell."
+	if cart_grain > 0:
+		return "Your handcart has grain in it: pull it to a windmill to grind it, or to Osric's store to sell it."
 	if dry > 0:
 		return "%d plot%s dry. Fill your bucket at the well and water them." % [dry, " is" if dry == 1 else "s are"]
 	if tilled_empty > 0 and not player.seed_kinds().is_empty():
@@ -121,7 +138,7 @@ static func sections() -> Array:
 		["Root crops: turnips and cabbage",
 			"Pull them by hand when ripe (hold left click); they go into your arms. Sell them at the Produce Bought cart, or eat them. Turnips: spring to autumn, ~3 days, survive frost. Cabbage: spring or summer, ~5 days; pick caterpillars off the leaves."],
 		["Grain: barley and wheat",
-			"1. Reap: hold the sickle over the ripe plot and sweep the mouse across it in steady strokes.\n2. Bind: switch to your hands (1) and click each cut bundle to tie it into a sheaf; sheaves go into your arms (3 at a time). Stack them on the grass (E) or load the handcart.\n3. Thresh: carry sheaves to the threshing floor (north-west of the house) and press E to lay them out, then hold the flail and click as the ring closes. The grain stays on the floor with its chaff.\n4. Winnow: hold the winnowing basket at the floor; hold the button to lift, release to toss when the pennant shows a gust. Each clean measure is bagged and set beside the floor.\n5. Pick up the sacks (E), load them into the handcart, and sell them at the Produce Bought cart.\nBarley: spring only, ~5 days, killed by frost. Wheat: sow in autumn; it grows slowly over winter and ripens in spring."],
+			"1. Reap: hold the sickle over the ripe plot and sweep the mouse across it in steady strokes.\n2. Bind: switch to your hands (1) and click each cut bundle to tie it into a sheaf; sheaves go into your arms (3 at a time). Stack them on the grass (E) or load the handcart.\n3. Thresh: carry sheaves to the threshing floor (north-west of the house) and press E to lay them out, then hold the flail: move the mouse up to raise it and swing it down hard onto the sheaf. The grain stays on the floor with its chaff.\n4. Winnow: hold the winnowing basket at the floor; hold the button to lift, release to toss when the pennant shows a gust. Each clean measure is bagged and set beside the floor.\n5. Pick up the sacks (E) and take them to a mill: grind them in your windmill (see Milling), or sell them to Osric the miller.\nBarley: spring only, ~5 days, killed by frost. Wheat: sow in autumn; it grows slowly over winter and ripens in spring."],
 		["Saving seed",
 			"You needn't buy seed forever. Turnips and cabbages: leave a ripe one in the ground and after a few days it bolts, sending up a flowering stalk. Pull it then to shake out 2 handfuls of seed (you lose the vegetable). Barley and wheat: the grain is the seed. While carrying a sack of clean grain, open your pack (Tab) and keep it as seed: 6 handfuls."],
 		["Keeping crops healthy",

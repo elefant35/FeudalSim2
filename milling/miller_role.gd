@@ -45,7 +45,7 @@ func next_task() -> Task:
 		return null   # mid-trip or on the tailpole: that task drives
 	if npc.is_carrying():
 		return _deliver()
-	for step: Callable in [_close_up, _sell_trip, _empty_bin, _luff, _set_sails, _fetch_grain, _start, _tend, _stop]:
+	for step: Callable in [_close_up, _sell_trip, _empty_bin, _luff, _set_sails, _fetch_grain, _start, _tend, _stop, _watch]:
 		var t: Task = step.call()
 		if t:
 			return t
@@ -70,13 +70,14 @@ func cloth_for_wind() -> int:
 	var felt := Clock.wind_strength() + rng.randfn(0.0, (1.0 - SKILL) * 0.12)
 	var best := 0
 	for i in PostMill.CLOTH_AREA.size():
-		if absf(felt * PostMill.CLOTH_AREA[i] * PostMill.POWER - 0.5) < absf(felt * PostMill.CLOTH_AREA[best] * PostMill.POWER - 0.5):
+		if absf(felt * PostMill.CLOTH_AREA[i] * PostMill.POWER * 0.88 - 0.5) < absf(felt * PostMill.CLOTH_AREA[best] * PostMill.POWER * 0.88 - 0.5):
 			best = i
 	return best
 
 
+## How fast he reckons the sails would turn on cloth `c` (grinding takes a little off).
 func _expected_speed(c: int) -> float:
-	return Clock.wind_strength() * PostMill.CLOTH_AREA[c] * PostMill.POWER
+	return Clock.wind_strength() * PostMill.CLOTH_AREA[c] * PostMill.POWER * 0.88
 
 
 ## Carrying something: grain goes up to the hopper, flour down to the cart.
@@ -182,7 +183,7 @@ func _fetch_grain() -> Task:
 		return null
 	if mill.hopper_count() >= 2 and not mill.current.is_empty():
 		return null   # plenty to be going on with
-	return _outside("Fetching grain from the store", _store_spot(), &"crouch", 1.0, func() -> void: mill.take_from_store(npc), 1.2)
+	return _outside("Fetching grain from the store", _store_spot(), &"crouch", 1.0, func() -> void: mill.take_from_store(npc, PostMill.HOPPER_MAX - mill.hopper_count()), 1.2)
 
 
 ## All set: let the brake off.
@@ -228,6 +229,13 @@ func _stop() -> Task:
 	return _inside(&"brake", "Stopping the mill", &"crank", 1.2, func() -> void: mill.set_brake(npc, true))
 
 
+## The mill's running and all's well: stay up by the stones and keep an ear on them.
+func _watch() -> Task:
+	if mill.brake_on:
+		return null
+	return _inside(&"hopper", "Minding the mill", &"idle", 15.0, Callable())
+
+
 # --- Getting about the mill -------------------------------------------------------------------
 
 ## Is he up in the mill's body?
@@ -242,6 +250,7 @@ func _route_in(part: StringName) -> Array[Task]:
 	if not is_inside():
 		steps.append(GoTo.new(mill.body.to_global(PostMill.STEPS_FOOT), 0.6, "Climbing up into the mill"))
 		steps.append(GoTo.new(mill.body.to_global(PostMill.DOOR), 0.35, "Climbing up into the mill", true))
+	steps.append(GoTo.new(mill.body.to_global(PostMill.AISLE), 0.35, "", true))
 	steps.append(GoTo.new(mill.body.to_global(PostMill.SPOTS[part][0]), 0.3, "", true))
 	return steps
 
@@ -250,13 +259,15 @@ func _route_in(part: StringName) -> Array[Task]:
 func _climb_down() -> Array[Task]:
 	var steps: Array[Task] = []
 	if is_inside():
+		steps.append(GoTo.new(mill.body.to_global(PostMill.AISLE), 0.35, "Climbing down", true))
 		steps.append(GoTo.new(mill.body.to_global(PostMill.DOOR), 0.35, "Climbing down", true))
 		steps.append(GoTo.new(mill.body.to_global(PostMill.STEPS_FOOT + Vector3(0, 0, 0.6)), 0.5, "Climbing down", true))
 	return steps
 
 
 func _steps_to(part: StringName, work: Task) -> Sequence:
-	var steps: Array[Task] = [GoTo.new(mill.body.to_global(PostMill.SPOTS[part][0]), 0.3, "", true), work]
+	var steps: Array[Task] = [GoTo.new(mill.body.to_global(PostMill.AISLE), 0.35, "", true),
+		GoTo.new(mill.body.to_global(PostMill.SPOTS[part][0]), 0.3, "", true), work]
 	return Sequence.new(work.label, steps)
 
 
@@ -322,6 +333,12 @@ func chat_line() -> String:
 	if sold_today > 0:
 		lines.append("Took %d gold for flour today." % sold_today)
 	return lines[rng.randi() % lines.size()]
+
+
+func debug_status() -> String:
+	return "[wind %.2f off %d° cloth %d brake %s speed %.2f hopper %d cur %s bin %d store %d gap %.2f feel %s]" % [
+		Clock.wind_strength(), roundi(rad_to_deg(mill.off_wind())), mill.cloth, mill.brake_on, mill.speed,
+		mill.hopper_count(), mill.current.get("id", "-"), mill.bin_count(), mill.store_count(), mill.gap, mill.feel_short()]
 
 
 func on_day_started() -> void:

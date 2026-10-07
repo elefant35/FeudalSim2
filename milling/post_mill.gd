@@ -31,14 +31,16 @@ const HUB := Vector3(0, 5.4, -2.75)       ## Where the sails turn.
 const TAIL_END := Vector3(0.8, 0.9, 6.4)  ## Where you take hold of the tailpole (beside the steps).
 const STEPS_FOOT := Vector3(0, 0, 5.9)
 const DOOR := Vector3(0, FLOOR_Y, 1.7)     ## Just inside the door.
-## Where to stand to work each part, and the point to face (body-local).
+## Where to stand to work each part, and the point to face (body-local). Inside, villagers walk
+## via AISLE (the open middle by the door), which has a clear line to every spot.
 const SPOTS := {
-	&"hopper": [Vector3(0, FLOOR_Y, -0.05), Vector3(0, FLOOR_Y, -1.0)],
-	&"bin": [Vector3(0.4, FLOOR_Y, 0.45), Vector3(1.2, FLOOR_Y, -0.3)],
-	&"brake": [Vector3(-1.05, FLOOR_Y, -0.5), Vector3(-1.35, FLOOR_Y, -1.35)],
-	&"tenter": [Vector3(1.2, FLOOR_Y, -1.1), Vector3(1.35, FLOOR_Y, -1.75)],
-	&"spout": [Vector3(0.4, FLOOR_Y, 0.45), Vector3(0.75, FLOOR_Y, -0.75)],
+	&"hopper": [Vector3(0.1, FLOOR_Y, 0.05), Vector3(0, FLOOR_Y, -1.0)],
+	&"bin": [Vector3(1.3, FLOOR_Y, -0.15), Vector3(1.2, FLOOR_Y, -1.0)],
+	&"spout": [Vector3(1.3, FLOOR_Y, -0.15), Vector3(0.95, FLOOR_Y, -1.0)],
+	&"brake": [Vector3(-1.15, FLOOR_Y, -0.6), Vector3(-1.35, FLOOR_Y, -1.35)],
+	&"tenter": [Vector3(-0.7, FLOOR_Y, 0.45), Vector3(-0.95, FLOOR_Y, -0.15)],
 }
+const AISLE := Vector3(0, FLOOR_Y, 0.7)
 ## The grain store and its sign stand here (local to the mill, clear of the sails' sweep).
 const STORE_AT := Vector3(7.5, 0, 1.0)
 
@@ -56,7 +58,9 @@ var store := Inventory.new()  ## Grain the miller has bought in.
 var current: Dictionary = {}  ## The measure on the stones now: {id, quality}.
 var progress := 0.0           ## How much of it is ground (0..1).
 var running_dry := false      ## Stones turning with nothing between them.
-var body: AnimatableBody3D
+## The body that turns. A plain static body that we move: it only turns slowly while someone
+## is outside on the tailpole, and nobody should be carried or flung by it.
+var body: StaticBody3D
 
 var _score_sum := 0.0
 var _score_w := 0.0
@@ -70,6 +74,8 @@ var _meal_fill: Node3D
 var _brake_lever: Node3D
 var _tenter_lever: Node3D
 var _store_visual := Node3D.new()
+var _pennant := Node3D.new()
+var _flap := 0.0
 var _sail_sound := AudioStreamPlayer3D.new()
 var _stone_sound := AudioStreamPlayer3D.new()
 
@@ -109,9 +115,8 @@ func _build_trestle() -> void:
 
 
 func _build_body() -> void:
-	body = AnimatableBody3D.new()
+	body = StaticBody3D.new()
 	body.name = "Body"
-	body.sync_to_physics = false
 	# Layer 2 only: people bump into it, but it stays out of the baked navigation (it turns).
 	body.collision_layer = 2
 	body.collision_mask = 0
@@ -142,8 +147,8 @@ func _build_body() -> void:
 	for sx: float in [-1.0, 1.0]:
 		_solid(Vector3(side, h, t), Vector3(sx * (0.5 + side / 2), FLOOR_Y + h / 2, HALF.y))
 	_solid(Vector3(1.0, h - 1.95, t), Vector3(0, FLOOR_Y + 1.95 + (h - 1.95) / 2, HALF.y))
-	_solid(Vector3(1.5, 0.85, 1.5), Vector3(0, FLOOR_Y + 0.425, -1.0))     # the stones in their vat
-	_solid(Vector3(0.55, 0.6, 0.7), Vector3(1.2, FLOOR_Y + 0.3, -0.3))     # the meal bin
+	_solid(Vector3(1.3, 0.85, 1.3), Vector3(0, FLOOR_Y + 0.425, -1.0))     # the stones in their vat
+	_solid(Vector3(0.55, 0.6, 0.7), Vector3(1.2, FLOOR_Y + 0.3, -1.0))     # the meal bin
 	# The steps: a ramp from the door down to the ground.
 	var top := Vector3(0, FLOOR_Y, HALF.y)
 	var run := STEPS_FOOT - top
@@ -165,15 +170,21 @@ func _build_body() -> void:
 	lamp.light_energy = 0.5
 	lamp.omni_range = 4.5
 	body.add_child(lamp)
+	# A pennant on the roof that streams downwind: face the sails the other way.
+	var pole := Models.box(Vector3(0.05, 1.2, 0.05), Color(0.33, 0.22, 0.13), Vector3(0, 6.95, HALF.y - 0.1))
+	body.add_child(pole)
+	_pennant.position = Vector3(0, 7.45, HALF.y - 0.1)
+	body.add_child(_pennant)
+	_pennant.add_child(Models.box(Vector3(0.8, 0.28, 0.02), Color(0.7, 0.18, 0.14), Vector3(0.4, 0, 0)))
 	# Things to aim at.
 	for p: Array in [
 		[&"tailpole", Vector3(0.5, 0.7, 1.8), TAIL_END + Vector3(0, 0.1, -0.6)],
 		[&"sails", Vector3(3.0, 3.6, 0.8), HUB + Vector3(0, -3.2, -0.2)],
 		[&"brake", Vector3(0.35, 1.6, 0.35), Vector3(-1.35, FLOOR_Y + 0.8, -1.35)],
-		[&"tenter", Vector3(0.35, 1.3, 0.5), Vector3(1.35, FLOOR_Y + 0.65, -1.75)],
+		[&"tenter", Vector3(0.35, 1.3, 0.35), Vector3(-0.95, FLOOR_Y + 0.65, -0.15)],
 		[&"hopper", Vector3(0.9, 0.55, 0.9), Vector3(0, FLOOR_Y + 1.3, -1.0)],
-		[&"spout", Vector3(0.35, 0.4, 0.35), Vector3(0.78, FLOOR_Y + 0.75, -0.72)],
-		[&"bin", Vector3(0.6, 0.65, 0.75), Vector3(1.2, FLOOR_Y + 0.33, -0.3)],
+		[&"spout", Vector3(0.4, 0.3, 0.3), Vector3(0.8, FLOOR_Y + 0.6, -1.0)],
+		[&"bin", Vector3(0.6, 0.65, 0.75), Vector3(1.2, FLOOR_Y + 0.33, -1.0)],
 	]:
 		body.add_child(MillPart.make(self, p[0], p[1], p[2]))
 	for a: AudioStreamPlayer3D in [_sail_sound, _stone_sound]:
@@ -228,7 +239,7 @@ func simulate(minutes: float) -> void:
 		minutes -= m
 		var target := 0.0 if brake_on else target_speed()
 		speed = lerpf(speed, target, 1.0 - exp(-m / (1.0 if brake_on else 4.0)))
-		if speed < 0.01:
+		if target == 0.0 and speed < 0.01:
 			speed = 0.0
 		_grind(m)
 
@@ -339,6 +350,8 @@ func facing_text() -> String:
 		return "a little off the wind (%d°)" % d
 	if d < 60:
 		return "well off the wind (%d°)" % d
+	if d < 120:
+		return "side-on to the wind (%d°)" % d
 	return "away from the wind"
 
 
@@ -436,15 +449,16 @@ func take_flour(actor: Actor) -> int:
 		if n > 0:
 			break
 	if n > 0:
-		Sfx.play_at("rustle", body.to_global(Vector3(1.2, FLOOR_Y + 0.5, -0.3)))
+		Sfx.play_at("rustle", body.to_global(Vector3(1.2, FLOOR_Y + 0.5, -1.0)))
 	return n
 
 
-## Takes an armful of grain from the store (the miller, carrying it up to the hopper).
-func take_from_store(actor: Actor) -> int:
+## Takes an armful of grain from the store (the miller, carrying it up to the hopper), no more
+## than `limit` sacks.
+func take_from_store(actor: Actor, limit: int = 99) -> int:
 	var n := 0
 	for st in store.stacks():
-		while actor.carry_space(st.id) > 0:
+		while actor.carry_space(st.id) > 0 and n < limit:
 			var q := store.take_one(st.id, true)
 			if q < -1:
 				break
@@ -537,6 +551,10 @@ func _process(delta: float) -> void:
 	_spin += speed * 2.2 * delta * Clock.speed()
 	if _sails:
 		_sails.rotation.z = _spin
+	var dir := Clock.wind_dir()
+	var s := Clock.wind_strength()
+	_flap += delta * (4.0 + s * 10.0)
+	_pennant.global_rotation = Vector3(0, atan2(-dir.z, dir.x), lerpf(-1.3, -0.05, clampf(s * 1.6, 0.0, 1.0)) + sin(_flap) * 0.08 * (0.3 + s))
 	var loud := clampf(speed / 0.6, 0.0, 1.0)
 	_set_loop(_sail_sound, loud > 0.05, linear_to_db(maxf(loud, 0.001)) - 4.0, 0.7 + speed * 0.6)
 	_set_loop(_stone_sound, is_grinding(), -6.0, 0.8 + speed * 0.4)
@@ -663,7 +681,7 @@ func part_interact(part: StringName, player: Player) -> void:
 			if player.is_carrying():
 				tip_in(player)
 		&"spout":
-			Sfx.play_at("grain", body.to_global(Vector3(0.78, FLOOR_Y + 0.6, -0.72)), -12.0)
+			Sfx.play_at("grain", body.to_global(Vector3(0.8, FLOOR_Y + 0.6, -1.0)), -12.0)
 			player.say(feel())
 		&"bin":
 			if not player.is_carrying() and take_flour(player) == 0:

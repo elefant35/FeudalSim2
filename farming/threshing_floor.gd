@@ -61,9 +61,9 @@ func _process(delta: float) -> void:
 	_pennant.rotation.z = lerpf(-1.25, -0.05, _shown_wind) + sin(_flap_phase) * 0.06 * (0.3 + _shown_wind)
 
 
+## The valley's wind (the weather), wavering a little in the gusts.
 func wind_dir() -> Vector3:
-	var a := 0.6 + _noise.get_noise_1d(_t * 0.05 + 50.0) * 0.8
-	return Vector3(cos(a), 0, sin(a))
+	return Clock.wind_dir().rotated(Vector3.UP, _noise.get_noise_1d(_t * 0.05 + 50.0) * 0.3)
 
 
 func has_sheaves() -> bool:

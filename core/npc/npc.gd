@@ -88,7 +88,7 @@ func _physics_process(delta: float) -> void:
 		_task = _think()
 		if _task:
 			if OS.has_environment("FS_NPC_LOG"):
-				print("NPC %s %s: %s" % [name, Clock.time_string(), _task.label])
+				print("NPC %s %s: %s   %s" % [name, Clock.time_string(), _task.label, role.debug_status() if role else ""])
 			_task.start(self)
 	elif _task.update(self, delta):
 		_task = null

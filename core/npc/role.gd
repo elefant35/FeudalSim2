@@ -25,6 +25,11 @@ func fetch_food() -> Task:
 	return null
 
 
+## A line about the work's state for the FS_NPC_LOG debug log ("" for nothing to add).
+func debug_status() -> String:
+	return ""
+
+
 func on_day_started() -> void:
 	pass
 

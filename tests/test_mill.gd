@@ -272,3 +272,14 @@ func test_the_miller_works_a_week() -> void:
 	check(osric.wallet.gold > start_gold, "made money (%d -> %d)" % [start_gold, osric.wallet.gold])
 	check(night_brake_ok, "braked the mill every night")
 	_finish(w)
+
+
+func test_sails_pick_up_speed_frame_by_frame() -> void:
+	# In play the clock ticks in tiny steps (a fraction of a game minute per frame).
+	var w := _world()
+	var mill := _ready_mill(w)
+	mill.brake_on = false
+	for i in 600:
+		mill.simulate(0.026)
+	check(mill.speed > 0.2, "the sails get going in small steps too (%.2f)" % mill.speed)
+	_finish(w)

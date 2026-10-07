@@ -209,13 +209,13 @@ func _build_shafts() -> Node3D:
 	return root
 
 
-## A windmill's tailpole: one great beam, both hands on it, running back up to the mill.
+## The worn end of a windmill's tailpole in both fists (the rest of it is the real one, in the world).
 func _build_tailpole() -> Node3D:
 	var root := Node3D.new()
 	var pivot := Node3D.new()
-	pivot.rotation.x = -0.25   # rising away towards the mill
+	pivot.rotation.x = 0.2   # rising a little towards the mill
 	root.add_child(pivot)
-	pivot.add_child(Models.box(Vector3(0.13, 0.13, 2.2), Color(0.33, 0.22, 0.13), Vector3(0, 0, -1.0)))
+	pivot.add_child(Models.box(Vector3(0.12, 0.12, 0.7), Color(0.33, 0.22, 0.13), Vector3(0, 0, -0.2)))
 	return root
 
 

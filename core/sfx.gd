@@ -3,7 +3,7 @@ extends Node
 ## res://assets/sounds; a random variant plays each time.
 
 const DIR := "res://assets/sounds"
-const LOOPING: Array[String] = ["pour", "rain_loop", "ambience_day"]
+const LOOPING: Array[String] = ["pour", "rain_loop", "ambience_day", "mill_sails", "mill_stones"]
 
 var _banks: Dictionary = {}   # name -> Array[AudioStream]
 

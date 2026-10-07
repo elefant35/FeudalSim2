@@ -12,7 +12,7 @@ folder; the converters copy just the files the game uses.
 | Market stall (red awning) | `assets/models/town_stall_red.glb` | [Fantasy Town Kit 2.0](https://kenney.nl/assets/fantasy-town-kit) | Kenney |
 | Loaf (bread) | `assets/models/food_loaf.glb` | [Food Kit](https://kenney.nl/assets/food-kit) | Kenney |
 | Footsteps, hoe thuds, threshing thwacks, pulls, snaps, thump | `assets/sounds/step_*`, `hoe_strike_*`, `thresh_*`, `pull_*`, `snap_*`, `thump_*` | [Impact Sounds](https://kenney.nl/assets/impact-sounds) | Kenney |
-| Rustles, crank creaks, cuts, coins | `assets/sounds/rustle_*`, `crank_*`, `cut_*`, `coins_*` | [RPG Audio](https://kenney.nl/assets/rpg-audio) | Kenney |
+| Rustles, crank and windmill creaks, cuts, coins | `assets/sounds/rustle_*`, `crank_*`, `creak_*`, `cut_*`, `coins_*` | [RPG Audio](https://kenney.nl/assets/rpg-audio) | Kenney |
 | UI open/close/click | `assets/sounds/ui_*` | [Interface Sounds](https://kenney.nl/assets/interface-sounds) | Kenney |
 | Splashes, squishes, pouring water, rain loop | `assets/sounds/splash_*`, `squish_*`, `pour`, `rain_loop` | [40 CC0 water / splash / slime SFX](https://opengameart.org/content/40-cc0-water-splash-slime-sfx) | rubberduck (OpenGameArt) |
 | Crow caw | `assets/sounds/crow_1` | [Crow caw](https://opengameart.org/content/crow-caw) | zeroisnotnull (OpenGameArt) |
@@ -28,12 +28,14 @@ The Kenney Nature Kit colours are converted from sRGB and re-tinted by `tools/bl
 |---|---|
 | First-person arms, hoe, bucket, sickle, flail, winnowing basket, seed pouch, scarecrow, cottage (with interior and fireplace), barrel, crate, lantern post, farm cart, well (with working crank), threshing floor, signboard, sheaves, grain piles and sacks, turnip/cabbage/barley/wheat at four growth stages plus blighted and dead versions, harvested turnip and cabbage, weed, caterpillar, crow | `tools/blender/make_models.py` (Blender, scripted) |
 | The villager: rigged low-poly character and all its animations (idle, walk, carry, pull, hoe, ...) | `tools/blender/make_villager.py` (Blender, scripted rig and keyframes) |
-| Sowing, grain patter, sickle swish, basket toss, eating, wing flaps, countryside ambience | `tools/sound/synth.py` (numpy) |
+| Post windmill (trestle, turning body with its stones, hopper, meal bin and levers, sails with reefable cloth), flour sack | `tools/blender/make_mill.py` (Blender, scripted; shared helpers in `tools/blender/kit.py`) |
+| Sowing, grain patter, sickle swish, basket toss, eating, wing flaps, countryside ambience, windmill sails and millstones, brake, sail cloth | `tools/sound/synth.py` (numpy) |
 
 ## Rebuilding
 
 ```bash
 /Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup --python tools/blender/import_packs.py
 /Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup --python tools/blender/make_models.py
+/Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup --python tools/blender/make_mill.py
 tools/sound/build_sounds.sh
 ```

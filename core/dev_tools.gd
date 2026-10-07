@@ -8,6 +8,7 @@ extends Node
 ## --pos=x,y,z     move the player;  --look=yaw,pitch  in degrees
 ## --give=id:n,..  add items;  --gold=n
 ## --speed=n       time speed index: 0 = 1x, 1 = 2x, 2 = 4x
+## --wind=deg,s    pin the wind: from this compass bearing (degrees), strength 0..1
 ## --scenario=name run a setup function on the world (world.dev_scenario)
 ## --shot=path     save a screenshot after --wait seconds (default 2.5), then quit
 ## --hold=slot     select a hotbar slot
@@ -46,6 +47,9 @@ func apply(world: Node3D, player: Player) -> void:
 	if args.has("speed"):
 		Clock.speed_index = int(args.speed)
 		Clock.speed_changed.emit(Clock.speed())
+	if args.has("wind"):
+		var wv := String(args.wind).split_floats(",")
+		Clock.set_wind(deg_to_rad(wv[0]), wv[1] if wv.size() > 1 else 0.5)
 	if args.has("rain"):
 		Clock.raining = args.rain == "true"
 	if args.has("gold"):
@@ -99,6 +103,7 @@ func apply(world: Node3D, player: Player) -> void:
 	if args.has("interact"):
 		await get_tree().create_timer(0.6).timeout
 		player._update_target()
+		print("DEV interact target: ", player.target, " at ", player.target_point)
 		if player.target and player.target.has_method("interact"):
 			player.target.interact(player)
 	if args.has("eat"):
