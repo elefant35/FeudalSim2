@@ -233,12 +233,15 @@ func test_the_miller_works_a_week() -> void:
 	var mill: PostMill = w.get_node("OsricMill")
 	var cart: HandCart = w.get_node("OsricCart")
 	osric.instant = true
+	role.rng.seed = 3
 	mill.store.add(&"wheat", 14, 2)
 	mill.store.add(&"barley", 8, 1)
 	var start_gold := osric.wallet.gold
 	var labels := {}
 	var ground := [0, 0]   # sacks, total quality
 	mill.ground.connect(func(_id: StringName, q: int) -> void:
+		if OS.has_environment("FS_MILL_DEBUG"):
+			print("  ground q%d  %s %s" % [q, Clock.time_string(), role.debug_status()])
 		ground[0] += 1
 		ground[1] += q)
 	var night_brake_ok := true

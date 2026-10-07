@@ -12,7 +12,9 @@ const WORK_FROM := 6.0          ## Hours he'll work the mill.
 const WORK_TO := 19.5
 const MIN_WIND := 0.16          ## Below this there's no point setting the sails.
 const OFF_WIND := deg_to_rad(18.0)   ## Off the wind by more than this: walk her round.
-const SPEED_BAND := Vector2(0.32, 0.7)   ## Sail speeds he's happy grinding at.
+## Sail speeds he's happy grinding at. Much faster than 0.6 and no gap between the stones keeps
+## the meal both fine and cool, so a good miller reefs in.
+const SPEED_BAND := Vector2(0.32, 0.6)
 const TEND_EVERY := 40.0        ## Game minutes between feeling the meal when it's right.
 
 var mill: PostMill
