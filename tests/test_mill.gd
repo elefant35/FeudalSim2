@@ -293,3 +293,28 @@ func test_flour_shows_as_sacks_everywhere() -> void:
 	eq(Items.carry_model(&"wheat"), &"grain_sack")
 	eq(Items.carry_model(&"turnip"), &"turnip")
 	check(Models.exists(&"flour_sack"), "the flour sack model exists")
+
+
+func test_close_stones_have_their_costs() -> void:
+	var w := _world()
+	var mill := _ready_mill(w)
+	mill.brake_on = false
+	mill.cloth = 2
+	Clock.set_wind(PI * 1.5, 0.45)
+	mill.simulate(60.0)   # a gentle pace: the stones won't overheat even shut tight
+	mill.set_gap(0.0)
+	check(mill.heat() <= 0.4, "cool at this pace (%.2f)" % mill.heat())
+	eq(mill.feel_short(), "dusty", "but shut tight they grind the bran in")
+	check(PostMill.flour_quality(2, mill.meal_score()) < 2, "and dusty meal costs quality")
+	# Among the gaps that give good meal, the widest grinds quickest.
+	var good: Array[float] = []
+	for g in 41:
+		mill.set_gap(g / 40.0)
+		if mill.feel_short() == "just right":
+			good.append(g / 40.0)
+	check(good.size() >= 4, "a band of good settings (%d)" % good.size())
+	mill.set_gap(good.front())
+	var slow := mill.pace()
+	mill.set_gap(good.back())
+	check(mill.pace() > slow * 1.2, "the wide end of the band is clearly quicker (%.2f vs %.2f)" % [mill.pace(), slow])
+	_finish(w)

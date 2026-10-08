@@ -20,13 +20,15 @@ construction roles exist):
    meal.
 5. **Tend the stones.** The miller's craft. The tentering-lever mini-game (move the mouse) sets the gap
    between the stones:
-   - Close stones grind fine but run hot.
-   - Wide stones grind fast but coarse.
+   - Close stones grind fine but slowly. Too close and they grind the bran in (dusty, dark meal), and
+     they run hot as the sails speed up.
+   - Wide stones grind quickly but coarse.
    - The faster the sails turn, the wider the stones must be to keep the meal cool.
 
-   Feel the meal at the spout (E, "rule of thumb") to judge it: hot, warm, gritty, rough or just
-   right. Fine, cool meal keeps the grain's quality; rough meal loses a grade, poor meal two. Running
-   too fast, no gap gives the best meal, so reef in.
+   Feel the meal at the spout (E, "rule of thumb") to judge it: hot, warm, dusty, gritty, rough or
+   just right. Fine, cool, clean meal keeps the grain's quality; rough meal loses a grade, poor meal
+   two. The lever shows the pace in sacks an hour, so the skill is grinding as wide as the meal
+   allows. Running too fast, no gap gives the best meal, so reef in.
 6. **Bag the flour** and sell it at the Produce Bought cart. Wheat flour sells for 13 at fair quality
    (grain 8); barley meal for 8 (grain 5).
 

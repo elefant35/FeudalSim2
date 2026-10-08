@@ -74,9 +74,15 @@ turnip seed, a small store of food (five loaves, four turnips) and 12 gold. Ever
    takes some in. Light winds want full sail; strong winds want it reefed, or the sails run away.
 3. **Fill the hopper.** Carry sacks of clean grain up the steps and tip them in (E).
 4. **Let the brake off** (the lever inside). The stones grind into the meal bin.
-5. **Tend the stones.** Feel the meal at the spout (E). *Hot* means the stones are too close for the speed:
-   hold click on the tentering lever and move the mouse up to open them. *Gritty* means they're too far
-   apart. Fine, cool meal keeps the grain's quality; rough or scorched meal loses a grade or two.
+5. **Tend the stones.** Hold click on the tentering lever and move the mouse to set the gap between the
+   stones; feel the meal at the spout (E) to judge it. It's a balance:
+   - Close stones grind fine but slowly. Too close and they grind the bran in (*dusty*), and they run
+     *hot* as the sails speed up.
+   - Wide stones grind quickly but coarse (*rough*, then *gritty*).
+
+   The lever shows your pace in sacks an hour. Grind as wide as the meal stays *just right*: that's the
+   quickest good flour. Fine, cool, clean meal keeps the grain's quality; anything else loses a grade
+   or two.
 6. Take the sacks from the bin (E) and sell flour or meal at the Produce Bought cart.
 
 **Saving seed.** Leave a ripe turnip or cabbage in the ground and after 3 days it bolts: a yellow

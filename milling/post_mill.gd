@@ -6,9 +6,11 @@ extends Node3D
 ## the hopper, let the brake off, and the stones grind it into the meal bin: wheat into flour,
 ## barley into meal.
 ## The miller's craft is the gap between the stones (the tentering lever). Close stones grind
-## fine but heat the meal; wide stones grind fast but coarse; and the faster the sails turn, the
-## hotter it runs. Feel the meal at the spout ("rule of thumb") to judge it: fine, cool meal keeps
-## the grain's quality, gritty or scorched meal loses some.
+## fine but slowly; too close and they grind the bran in with the flour (dusty, dark meal), and
+## they heat the meal, the more so the faster the sails turn. Wide stones grind quickly but
+## coarse. Feel the meal at the spout ("rule of thumb") to judge it: fine, cool, clean meal keeps
+## the grain's quality; gritty, dusty or scorched meal loses some. The best miller grinds as wide
+## as the meal allows, because that's quickest.
 ## The mill runs on game minutes (Clock), so a villager miller works one by the same rules.
 
 signal ground(id: StringName, quality: int)   ## A sack's worth went into the meal bin.
@@ -19,6 +21,8 @@ const POWER := 1.3            ## Sail speed per unit of wind on a full sail, squ
 const GRIND_MIN := 0.22       ## Slower than this, the stones barely turn.
 const RUNAWAY := 0.85         ## Faster than this, the sails are running away.
 const SACKS_PER_HOUR := 1.8   ## Grinding rate at full speed with the stones half open.
+const FINE_ENOUGH := 0.75     ## Coarser than this, the meal is rough.
+const TOO_FINE := 0.93        ## Finer than this, the stones are grinding the bran in: dusty meal.
 const HOPPER_MAX := 4
 const BIN_MAX := 8
 const STORE_MAX := 24
@@ -257,7 +261,7 @@ func _grind(minutes: float) -> void:
 		if current.is_empty():
 			running_dry = true   # the stones turn on nothing
 			return
-	var r := SACKS_PER_HOUR / 60.0 * minutes * speed * lerpf(0.6, 1.4, gap)
+	var r := pace() / 60.0 * minutes
 	_score_sum += meal_score() * r
 	_score_w += r
 	progress += r
@@ -293,8 +297,16 @@ func heat() -> float:
 	return clampf(speed * 1.2 - gap * 0.9 - 0.05, 0.0, 1.0)
 
 
+## Sacks an hour the stones would grind at this speed and gap (wider is quicker).
+func pace() -> float:
+	return SACKS_PER_HOUR * speed * lerpf(0.6, 1.4, gap) if speed >= GRIND_MIN else 0.0
+
+
+## How good the meal is, 0..1: fine but not dusty, and cool.
 func meal_score() -> float:
-	return clampf(fineness() - maxf(0.0, heat() - 0.4) * 2.0, 0.0, 1.0)
+	var f := fineness()
+	var grade := minf(f, 1.0 - (f - 0.88) * 5.0)   # past 0.93 the bran comes through
+	return clampf(grade - maxf(0.0, heat() - 0.4) * 2.0, 0.0, 1.0)
 
 
 ## Fine, cool meal keeps the grain's quality; rough meal loses a grade, poor meal two.
@@ -309,9 +321,11 @@ func feel_short() -> String:
 		return "hot"
 	if heat() > 0.4:
 		return "warm"
+	if fineness() > TOO_FINE:
+		return "dusty"
 	if fineness() < 0.55:
 		return "gritty"
-	if fineness() < 0.75:
+	if fineness() < FINE_ENOUGH:
 		return "rough"
 	return "just right"
 
@@ -325,9 +339,14 @@ func feel() -> String:
 	match feel_short():
 		"hot": return "Hot to the touch! The stones are too close for this speed. Open them up, or take in cloth."
 		"warm": return "Warm. It's starting to scorch: open the stones a touch."
+		"dusty": return "Floury dust, and dark with it: the stones are so close they're grinding the bran in. Open them a touch (it'll grind quicker too)."
 		"gritty": return "Gritty and coarse. Bring the stones closer."
 		"rough": return "A bit rough. The stones could come a little closer."
-	return "Cool and soft as silk. Just right."
+	return "Cool and soft as silk. Just right. (Open the stones as far as it stays like this: wider grinds quicker.)"
+
+
+func pace_text() -> String:
+	return "grinding about %.1f sacks an hour" % pace() if is_grinding() else "not grinding"
 
 
 func speed_text() -> String:
@@ -626,7 +645,7 @@ func part_prompt(part: StringName, player: Player) -> String:
 		&"brake":
 			return "Brake lever · sails %s\n[E] %s" % [speed_text(), "Let the brake off" if brake_on else "Put the brake on"]
 		&"tenter":
-			return "Tentering lever · the stones are %s · the meal is %s\n[Click] Set the gap between the stones (move the mouse)" % [gap_text(), feel_short() if is_grinding() else "not running"]
+			return "Tentering lever · the stones are %s · the meal is %s · %s\n[Click] Set the gap: closer is finer but slower, wider is quicker but coarser" % [gap_text(), feel_short() if is_grinding() else "not running", pace_text()]
 		&"hopper":
 			var head := "Hopper · %d/%d sacks waiting%s" % [hopper_count(), HOPPER_MAX, " · %s on the stones" % Items.name_of(StringName(current.id)).to_lower() if not current.is_empty() else ""]
 			if player.is_carrying():

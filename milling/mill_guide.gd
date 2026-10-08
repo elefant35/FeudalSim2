@@ -34,7 +34,7 @@ static func next_step(player: Player, mill: PostMill) -> String:
 		if mill.speed > PostMill.RUNAWAY:
 			return "The sails are running away! Brake, then take in some cloth at the sails."
 		if mill.feel_short() != "just right" and _inside(player, mill):
-			return "Feel the meal at the spout, then set the stones with the tentering lever."
+			return "Feel the meal at the spout (E), then set the stones with the tentering lever: open them if it's hot or dusty, close them if it's gritty."
 	if mill.running_dry:
 		return "Your stones are running dry: fill the hopper or put the brake on."
 	if mill.bin_count() > 0 and not mill.is_grinding():
@@ -52,7 +52,7 @@ static func _inside(player: Player, mill: PostMill) -> bool:
 static func sections() -> Array:
 	return [
 		["Milling: your windmill",
-			"Clean grain is worth more ground. Your post mill stands north-west of the house; the whole body turns on its great post.\n1. Face the wind: take the tailpole (E at its end, beside the steps) and walk slowly round until the sails face into the wind. Watch which way the pennants and the trees blow; the tailpole's prompt tells you how far off you are.\n2. Set the sails: with the brake on and the sails stopped, E at the sails spreads more cloth, click takes some in. Light wind wants full sail; a strong wind wants it reefed, or the sails run away.\n3. Fill the hopper: carry sacks of clean grain up the steps and tip them in (E).\n4. Let the brake off (the lever inside). The stones grind into the meal bin.\n5. Tend the stones: feel the meal at the spout (E). Hot means the stones are too close for the speed: open them with the tentering lever (click and move the mouse up). Gritty means too far apart: bring them down. Fine, cool meal keeps the grain's quality; rough or scorched meal loses some.\n6. Take the sacks from the bin (E) and sell flour or meal at the Produce Bought cart."],
+			"Clean grain is worth more ground. Your post mill stands north-west of the house; the whole body turns on its great post.\n1. Face the wind: take the tailpole (E at its end, beside the steps) and walk slowly round until the sails face into the wind. Watch which way the pennants and the trees blow; the tailpole's prompt tells you how far off you are.\n2. Set the sails: with the brake on and the sails stopped, E at the sails spreads more cloth, click takes some in. Light wind wants full sail; a strong wind wants it reefed, or the sails run away.\n3. Fill the hopper: carry sacks of clean grain up the steps and tip them in (E).\n4. Let the brake off (the lever inside). The stones grind into the meal bin.\n5. Tend the stones with the tentering lever (click, move the mouse) and feel the meal at the spout (E). Close stones grind fine but slowly; too close and they grind the bran in (dusty) or, with the sails going fast, scorch it (hot). Wide stones grind quickly but coarse (rough, gritty). The lever shows your pace: grind as wide as the meal stays just right. Fine, cool, clean meal keeps the grain's quality; anything else loses some.\n6. Take the sacks from the bin (E) and sell flour or meal at the Produce Bought cart."],
 		["The miller",
 			"Osric keeps the village mill to the north. He buys clean grain at his store beside the mill (E there with grain in your arms or your handcart parked close), and grinds it himself. Wynn sells him his grain too. The produce buyer won't take raw grain: it's the mill or nothing."],
 	]

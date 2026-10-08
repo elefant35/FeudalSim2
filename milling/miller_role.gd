@@ -217,7 +217,7 @@ func _tend() -> Task:
 		_steps_to(&"tenter", Work.new("Setting the stones", &"crank", 1.2, func() -> void:
 			var step := 0.1 if _last_reading in ["hot", "gritty"] else 0.05
 			step *= 1.0 + rng.randf_range(-(1.0 - SKILL), 1.0 - SKILL)
-			mill.set_gap(mill.gap + (step if _last_reading in ["hot", "warm"] else -step)), &"", mill.body.to_global(PostMill.SPOTS[&"tenter"][1])))))
+			mill.set_gap(mill.gap + (step if _last_reading in ["hot", "warm", "dusty"] else -step)), &"", mill.body.to_global(PostMill.SPOTS[&"tenter"][1])))))
 	return Sequence.new("Tending the stones", steps)
 
 
